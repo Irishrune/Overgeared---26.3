@@ -53,8 +53,8 @@ public final class OvergearedFabric implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        NeoForgeConfigRegistry.INSTANCE.register(OvergearedMod.MOD_ID, ModConfig.Type.COMMON, ServerConfig.SERVER_CONFIG);
-        NeoForgeConfigRegistry.INSTANCE.register(OvergearedMod.MOD_ID, ModConfig.Type.CLIENT, ClientConfig.CLIENT_CONFIG);
+        ConfigRegistry.INSTANCE.register(OvergearedMod.MOD_ID, ModConfig.Type.COMMON, ServerConfig.SERVER_CONFIG);
+        ConfigRegistry.INSTANCE.register(OvergearedMod.MOD_ID, ModConfig.Type.CLIENT, ClientConfig.CLIENT_CONFIG);
 
         OvergearedMod.init();
         OvergearedMod.commonSetup();
