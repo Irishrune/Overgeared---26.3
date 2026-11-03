@@ -1,0 +1,79 @@
+plugins {
+    // Minecraft 26.1+ is unobfuscated. Do NOT use the legacy remapping Loom plugin.
+    id 'net.fabricmc.fabric-loom' version "${fabric_loom_version}"
+    id 'maven-publish'
+}
+
+group = project.maven_group
+version = project.mod_version
+base { archivesName = 'overgeared-fabric-26.3-port' }
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://raw.githubusercontent.com/Fuzss/modresources/main/maven/' }
+    maven { url = 'https://maven.blamejared.com/' }
+    maven { url = 'https://maven.terraformersmc.com/' }
+}
+
+// Compile upstream common sources in the Fabric module without copying or dropping
+// the original sources. NeoForge remains present as historical source but is NOT
+// part of the active Gradle build. These Java files still need 26.3 API migration.
+sourceSets {
+    main {
+        java.srcDir(rootProject.file('common/src/main/java'))
+        // Port core smithing first. These optional adapters use incompatible 1.21.1
+        // third-party APIs; no 26.3 JEI/EMI/Sable entrypoints are registered.
+        java.exclude 'net/stirdrem/overgeared/compat/jei/**'
+        java.exclude 'net/stirdrem/overgeared/compat/emi/**'
+        java.exclude 'net/stirdrem/overgeared/compat/sable/**' 
+        resources.srcDir(rootProject.file('common/src/main/resources'))
+    }
+}
+
+loom {
+    mods {
+        'overgeared' {
+            sourceSet sourceSets.main
+        }
+    }
+    accessWidenerPath = file('src/main/resources/overgeared.accesswidener')
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.fabric_loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    // Verified 26.3 release; original Overgeared config types use its API.
+    implementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${project.forge_config_api_port_version}"
+
+    // INTENTIONALLY not adding JEI/EMI/Sable artifacts from 1.21.1. Their Java
+    // integration classes must be adapted or isolated as part of the actual port.
+}
+
+processResources {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    def props = [
+        mod_id: project.mod_id,
+        mod_version: project.mod_version,
+        mod_name: project.mod_name,
+        mod_authors: project.mod_authors,
+        mod_description: project.mod_description,
+        mod_license: project.mod_license,
+        minecraft_version: project.minecraft_version,
+        forge_config_api_port_version: project.forge_config_api_port_version
+    ]
+    inputs.properties(props)
+    filesMatching('fabric.mod.json') { expand props }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 25
+}
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+    withSourcesJar()
+}
+
+jar { duplicatesStrategy = DuplicatesStrategy.EXCLUDE }

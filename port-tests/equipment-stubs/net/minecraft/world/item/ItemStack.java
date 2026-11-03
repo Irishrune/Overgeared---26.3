@@ -1,0 +1,1 @@
+package net.minecraft.world.item; public class ItemStack { public int damage; public void hurtAndBreak(int amount, net.minecraft.world.entity.LivingEntity owner, net.minecraft.world.entity.EquipmentSlot slot) {this.damage+=amount;} }

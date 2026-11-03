@@ -1,0 +1,1 @@
+package net.minecraft.network.chat; public record Component(String text) {public static Component translatable(String key){return new Component(key);} public Component withStyle(net.minecraft.ChatFormatting fmt){return this;} }
