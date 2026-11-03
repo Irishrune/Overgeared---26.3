@@ -193,3 +193,10 @@ The subsequent commits have migrated:
 4. javac settings to show up to 1,000 errors and added source regression tests.
 
 The next actionable step is **compiler-driven, feature-preserving migrations**, not installing the JAR. No playable or tested release exists.
+
+
+### Follow-up compiler verification — 2026-11-03
+
+**Run:** https://github.com/Irishrune/Overgeared---26.3/actions/runs/41736950093
+
+The source regression tests **pass** after fixing both `ConfigRegistry.INSTANCE.register(...)` call sites. The Java 25/Fabric compiler now reports **896 errors** (down from 899 on the prior widened-compiler run). The first missing symbols are in the villager trade system; the remaining errors also affect GUI/menu APIs, renderer types, custom arrows and other Minecraft 26.3 migrations. This confirms the recent compatibility fixes, but is **not** a playable build.
