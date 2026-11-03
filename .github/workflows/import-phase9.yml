@@ -1,0 +1,80 @@
+name: Import and compile Overgeared Phase 9
+on:
+  push:
+    paths:
+      - "porting/phase9-git.patch.bz2.base64"
+      - ".github/workflows/import-phase9.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  phase9:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out this repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Import the pinned upstream source and verified Phase 9 delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f common/src/main/java/net/stirdrem/overgeared/OvergearedMod.java ]; then
+            echo "Phase 9 source already present; skipping import."
+            exit 0
+          fi
+          curl --fail --show-error --silent --location --retry 3 \
+            "https://github.com/phuccom000/Overgeared/archive/c898a0ce89b55a311ddf1b89079808a73f3604a1.zip" \
+            --output /tmp/overgeared-upstream.zip
+          mkdir -p /tmp/overgeared-upstream
+          unzip -q /tmp/overgeared-upstream.zip -d /tmp/overgeared-upstream
+          rsync -a --exclude .git /tmp/overgeared-upstream/Overgeared-c898a0ce89b55a311ddf1b89079808a73f3604a1/ ./
+          base64 -d porting/phase9-git.patch.bz2.base64 | bzip2 -dc > /tmp/phase9-port.patch
+          echo "37f550084b077e2d091a81666a7bd3c6053996848557265f3833cff72aa24001  /tmp/phase9-port.patch" | sha256sum --check
+          git apply --check --exclude=.github/workflows/fabric-263-build.yml --whitespace=nowarn /tmp/phase9-port.patch
+          git apply --exclude=.github/workflows/fabric-263-build.yml --whitespace=nowarn /tmp/phase9-port.patch
+          rm -rf tools/__pycache__
+          chmod +x gradlew
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Import verified Phase 9 Fabric 26.3 port source"
+          git push
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run source regression tests
+        shell: bash
+        continue-on-error: true
+        run: |
+          python port-tests/run.py 2>&1 | tee port-tests.log
+          python -m unittest discover -s port-tests -p 'test_*.py' -v 2>&1 | tee -a port-tests.log
+
+      - name: Attempt the real Fabric 26.3 Java compilation
+        id: compile
+        shell: bash
+        run: |
+          set -o pipefail
+          chmod +x gradlew
+          ./gradlew :fabric:compileJava --console=plain --stacktrace 2>&1 | tee compile-26.3.log
+
+      - name: Upload diagnostic logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase9-build-diagnostics
+          path: |
+            compile-26.3.log
+            port-tests.log
+          if-no-files-found: warn

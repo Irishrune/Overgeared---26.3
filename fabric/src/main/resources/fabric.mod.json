@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "${mod_name}",
+  "description": "${mod_description}",
+  "authors": ["${mod_authors}"],
+  "license": "${mod_license}",
+  "icon": "logo.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["net.stirdrem.overgeared.fabric.OvergearedFabric"],
+    "client": ["net.stirdrem.overgeared.fabric.client.OvergearedFabricClient"]
+  },
+  "mixins": ["overgeared.mixins.json", "overgeared.fabric.mixins.json"],
+  "accessWidener": "overgeared.accesswidener",
+  "depends": {
+    "fabricloader": ">=0.20.1",
+    "fabric-api": "*",
+    "minecraft": "26.3",
+    "java": ">=25",
+    "forgeconfigapiport": ">=26.3.1"
+  }
+}

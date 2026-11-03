@@ -1,0 +1,9 @@
+{
+  "values": [
+    "minecraft:grindstone",
+    {
+      "id": "spelunkery:diamond_grindstone",
+      "required": false
+    }
+  ]
+}

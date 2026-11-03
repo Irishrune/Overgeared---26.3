@@ -1,0 +1,6 @@
+package net.minecraft.world.item;
+import net.minecraft.world.level.block.Block;
+public class BlockItem extends Item {
+    public final Block block;
+    public BlockItem(Block block,Properties properties) {super(properties);this.block=block;}
+}

@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+"""Conservative 26.3 import migration for classes verified in 26.3 mapping browser.
+
+Only rewrites exact import paths and qualified references. Rename ResourceLocation
+symbols only in compilation units which imported that exact class. This does not
+attempt method/API migration or claim the module will compile afterwards.
+"""
+from pathlib import Path
+import re
+import sys
+
+ROOT=Path(__file__).resolve().parents[1]
+MAPPINGS={
+    'net.minecraft.world.item.ItemStack':'net.minecraft.item.ItemStack',
+    'net.minecraft.world.item.Item':'net.minecraft.item.Item',
+    'net.minecraft.world.item.Items':'net.minecraft.item.Items',
+    'net.minecraft.world.item.BlockItem':'net.minecraft.item.BlockItem',
+    'net.minecraft.world.level.block.Block':'net.minecraft.block.Block',
+    'net.minecraft.world.level.block.Blocks':'net.minecraft.block.Blocks',
+    'net.minecraft.world.level.block.state.BlockState':'net.minecraft.block.BlockState',
+    'net.minecraft.resources.ResourceLocation':'net.minecraft.util.Identifier',
+}
+files=sorted([* (ROOT/'common/src/main/java').rglob('*.java'),*(ROOT/'fabric/src/main/java').rglob('*.java')])
+changes=0
+for file in files:
+    src=file.read_text()
+    edited=src
+    had_identifier_import='import net.minecraft.resources.ResourceLocation;' in src
+    for old,new in MAPPINGS.items():
+        # Rewrite imported class with exact semicolon, and fully-qualified class tokens.
+        edited=edited.replace(f'import {old};',f'import {new};')
+        edited=re.sub(r'(?<![\w.])'+re.escape(old)+r'\b',new,edited)
+    if had_identifier_import:
+        # The 26.3 Identifier class retains fromNamespaceAndPath/parse/getPath.
+        edited=re.sub(r'\bResourceLocation\b','Identifier',edited)
+    if edited!=src:
+        file.write_text(edited)
+        changes+=1
+print(f'Migrated imports / type names in {changes} Java files; additional APIs remain unported.')

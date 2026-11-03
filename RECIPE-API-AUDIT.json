@@ -1,0 +1,35 @@
+{
+  "legacy_empty_ingredient": {
+    "occurrences": 0,
+    "locations": []
+  },
+  "legacy_item_stack_codec": {
+    "occurrences": 0,
+    "locations": []
+  },
+  "legacy_item_stack_stream_codec": {
+    "occurrences": 0,
+    "locations": []
+  },
+  "optional_item_stack_stream_codec": {
+    "occurrences": 0,
+    "locations": []
+  },
+  "recipe_holder_usage_not_a_failure": {
+    "occurrences": 2,
+    "locations": [
+      {
+        "path": "common/src/main/java/net/stirdrem/overgeared/recipe/RecipeLookups.java",
+        "line": 31
+      },
+      {
+        "path": "common/src/main/java/net/stirdrem/overgeared/recipe/ForgingRecipe.java",
+        "line": 82
+      }
+    ]
+  },
+  "legacy_recipe_manager_get_all": {
+    "occurrences": 0,
+    "locations": []
+  }
+}
