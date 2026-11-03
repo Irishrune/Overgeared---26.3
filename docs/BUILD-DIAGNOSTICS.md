@@ -175,3 +175,21 @@ The GitHub-hosted runner installed Java 25 and Gradle 9.8.2, ran isolated tests 
 5. Restore optional compatibility adapters (JEI/EMI) only after core compilation and runtime checks.
 
 **Do not install into Forever World until client and dedicated-server startup plus forging gameplay pass.**
+
+
+## Expanded Java 25 compile diagnostics (November 3, 2026)
+
+- **Run:** https://github.com/Irishrune/Overgeared---26.3/actions/runs/41736205157
+- **Source regression tests:** passed.
+- **Minecraft/Fabric Java compilation:** failed with **899 reported errors** after increasing javac's error limit to 1,000 (previous runs only surfaced the first 100).
+- The first wave centers on missing/changed Fabric APIs and vanilla 26.3 classes; substantial migrations remain for anvil menus, item interactions, rendering, custom arrows, villager trades and recipe-book screens.
+
+Most affected classes in the compilation output include `UpgradeArrowEntity`, `AbstractSmithingAnvilMenu`, `OvergearedConfigScreen`, `LingeringArrowEntity` and `AbstractSmithingAnvilBlockEntity`. These counts are a compiler snapshot, **not** a progress estimate: fixing shared imports or interfaces may resolve many downstream errors.
+
+The subsequent commits have migrated:
+1. `UseItemCallback` to return `InteractionResult` instead of the removed `InteractionResultHolder`;
+2. creative-tab factory invocation to `CreativeModeTab.builder()`;
+3. Forge Config API Port registration from Fabric's obsolete v4 class to `fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry` (confirmed against the dependency's 26.3.x source);
+4. javac settings to show up to 1,000 errors and added source regression tests.
+
+The next actionable step is **compiler-driven, feature-preserving migrations**, not installing the JAR. No playable or tested release exists.
