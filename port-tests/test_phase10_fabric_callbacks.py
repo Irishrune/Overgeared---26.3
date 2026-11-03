@@ -20,6 +20,12 @@ class Fabric263CallbackMigrationTests(unittest.TestCase):
         self.assertNotIn("FabricItemGroup", source)
         self.assertIn("return CreativeModeTab.builder();", source)
 
+    def test_config_registry_uses_26_3_v5_api(self):
+        source = (FABRIC / "OvergearedFabric.java").read_text(encoding="utf-8")
+        self.assertIn("fabric.api.v5.ConfigRegistry", source)
+        self.assertIn("ConfigRegistry.INSTANCE.register(", source)
+        self.assertNotIn("NeoForgeConfigRegistry", source)
+
     def test_compiler_reports_more_than_first_100_errors(self):
         source = (ROOT / "fabric/build.gradle").read_text(encoding="utf-8")
         self.assertIn("'1000'", source)
