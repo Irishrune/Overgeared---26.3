@@ -4,7 +4,6 @@ import com.mojang.serialization.MapCodec;
 import io.netty.buffer.Unpooled;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.registry.FuelRegistry;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
@@ -133,7 +132,7 @@ public class FabricPlatformHelper implements IPlatformHelper {
 
     @Override
     public CreativeModeTab.Builder creativeModeTabBuilder() {
-        return FabricItemGroup.builder();
+        return CreativeModeTab.builder();
     }
 
     @Override

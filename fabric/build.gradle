@@ -70,6 +70,8 @@ processResources {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.release = 25
+    // Show up to 1,000 migration errors per run instead of javac's default 100.
+    options.compilerArgs += ['-Xmaxerrs', '1000']
 }
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(25)

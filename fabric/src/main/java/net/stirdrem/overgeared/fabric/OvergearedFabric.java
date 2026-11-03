@@ -24,7 +24,6 @@ import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
@@ -201,16 +200,16 @@ public final class OvergearedFabric implements ModInitializer {
         UseItemCallback.EVENT.register((player, level, hand) -> {
             ItemStack stack = player.getItemInHand(hand);
             if (player.isSpectator()) {
-                return InteractionResultHolder.pass(stack);
+                return InteractionResult.PASS;
             }
             PlayerInteractEvent.RightClickItem event = new PlayerInteractEvent.RightClickItem(player, hand);
             for (Consumer<PlayerInteractEvent.RightClickItem> handler : itemHandlers) {
                 handler.accept(event);
                 if (event.isCanceled()) {
-                    return new InteractionResultHolder<>(event.getCancellationResult(), player.getItemInHand(hand));
+                    return event.getCancellationResult();
                 }
             }
-            return InteractionResultHolder.pass(stack);
+            return InteractionResult.PASS;
         });
 
         AttackBlockCallback.EVENT.register((player, level, hand, pos, direction) -> {

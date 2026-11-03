@@ -1,1 +1,0 @@
-package net.minecraft.world.entity.player; public class Player extends net.minecraft.world.entity.LivingEntity { private boolean creative; public Player(boolean creative){this.creative=creative;} public boolean isCreative(){return creative;} }

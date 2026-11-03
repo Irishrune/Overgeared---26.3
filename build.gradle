@@ -1,7 +1,0 @@
-// The migration is Fabric-first; common sources are compiled into :fabric.
-// Original multi-loader source is retained, but :common and :neoforge are not
-// Gradle subprojects in this stage to avoid resolving incompatible 1.21.1 NeoForm.
-allprojects {
-    group = project.maven_group
-    version = project.mod_version
-}

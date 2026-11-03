@@ -1,1 +1,0 @@
-package net.minecraft.world.level.block.state; public class BlockState { private final float hardness; public BlockState(float hardness){this.hardness=hardness;} public float getDestroySpeed(net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos){return hardness;} }
