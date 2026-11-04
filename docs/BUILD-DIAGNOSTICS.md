@@ -212,3 +212,22 @@ The source regression tests **pass** after fixing both `ConfigRegistry.INSTANCE.
 - **Original 1.21.1 trade bridge:** archived and excluded from the active build after migrating 38 forged offers and 2 steel barter offers. Existing vanilla gear quality wrappers and random wandering-trader blueprints **remain unimplemented** in the new data-driven path.
 
 Next compiler focus: Fabric entry-point event APIs, recipe-book Mixins/screens, workstation menus, custom arrows, client rendering. Test against Minecraft 26.3 client and dedicated-server before distributing a JAR.
+
+
+## Compiler-driven API migration — latest November 3, 2026 pass
+
+**Verified source:** Java 25, Fabric 26.3, CI run https://github.com/Irishrune/Overgeared---26.3/actions/runs/41754838578
+
+- Starting baseline for this pass: **837 compiler errors**.
+- After replacing 35 obsolete `Level.isClientSide` field reads across 21 files, updating loot pool rolls and the Nullable import: **797**.
+- After updating protected `Level.random` reads to `getRandom()` and the typed `GameRules.LIMITED_CRAFTING` check: **789**.
+- After replacing the removed Fabric world-change callback with server-owned player-world tracking and origin-world smithing-anvil cleanup: **787**.
+- After updating `PayloadTypeRegistry.clientboundPlay/serverboundPlay`, `PreparableReloadListener.SharedState` and four-argument reload delegation, `ResourceKey.identifier()`, and ItemStack-based cooldown checks: **780 errors**.
+
+All isolated source regression tests passed on the latest CI run. No compiler errors were attributed to the Fabric entry-point class in the current batch, but the **mod still fails compilation**. The remaining major groups include legacy recipe-book client classes, removed Fabric screen-handler API, UI renderer changes, custom arrow entity APIs, and workstation menus.
+
+### Session cleanup consideration
+
+A transfer to another dimension now resets the tracked smithing anvil using the **origin Level** rather than the player's destination Level. Player tracking is cleaned up on disconnect, respawn, and server stop. This fixes source-level ownership cleanup logic, but must be tested on a disposable server with multiple players and matching block coordinates across dimensions before production use.
+
+**Release status:** no playable or tested JAR; do not install into a persistent survival world.
