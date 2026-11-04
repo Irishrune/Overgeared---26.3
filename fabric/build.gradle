@@ -25,7 +25,14 @@ sourceSets {
         // third-party APIs; no 26.3 JEI/EMI/Sable entrypoints are registered.
         java.exclude 'net/stirdrem/overgeared/compat/jei/**'
         java.exclude 'net/stirdrem/overgeared/compat/emi/**'
-        java.exclude 'net/stirdrem/overgeared/compat/sable/**' 
+        java.exclude 'net/stirdrem/overgeared/compat/sable/**'
+        // Removed 1.21.1 VillagerTrades.ItemListing was replaced by data-driven
+        // trade definitions. Keep old Java files in source control for migration.
+        java.exclude 'net/stirdrem/overgeared/fabric/FabricTrades.java'
+        java.exclude 'net/stirdrem/overgeared/event/QualityWrappedTrade.java'
+        java.exclude 'net/stirdrem/overgeared/event/ForgedItemTrade.java'
+        java.exclude 'net/stirdrem/overgeared/event/BlueprintWanderingTrade.java'
+        java.exclude 'net/stirdrem/overgeared/event/SteelEmeraldTrade.java' 
         resources.srcDir(rootProject.file('common/src/main/resources'))
     }
 }

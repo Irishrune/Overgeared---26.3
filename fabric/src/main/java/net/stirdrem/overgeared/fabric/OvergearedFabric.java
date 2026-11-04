@@ -64,7 +64,8 @@ public final class OvergearedFabric implements ModInitializer {
         registerLifecycleEvents();
         registerInteractionEvents();
         registerLoot();
-        FabricTrades.register();
+        // 26.3 trades are loaded from data/<namespace>/villager_trade.
+        // The obsolete Java trade bridge is retained as migration reference only.
 
         CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> ModCommands.register(dispatcher));
     }

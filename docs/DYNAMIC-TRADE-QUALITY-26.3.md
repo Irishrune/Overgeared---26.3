@@ -42,3 +42,19 @@ so adding 38 possibilities does not make villagers stock all 38 simultaneously.
 Minecraft 26.3 changed the inline trade field name to
 `given_item_modifier` and the item function discriminator to `type`;
 the older plural and `function` keys would be incorrect here.
+
+
+## Obsolete Java bridge isolated from Fabric compilation
+
+After adding the 38 dynamic forged offers and two steel barters, the obsolete
+`FabricTrades.register()` startup call is no longer used. Its old
+`VillagerTrades.ItemListing` classes are excluded from active Fabric compilation;
+they remain in Git source history. The `ModEvents` trade hooks were moved intact
+to `porting/legacy-trades/ModEvents-trade-methods.txt` as a migration reference.
+
+**Deliberately not yet feature-complete:** the old behavior that modifies
+existing vanilla sword/tool/armor trades and the Wandering Trader's random
+blueprints is not active in the replacement. Neither is being silently marked
+as ported. Both must be implemented on the new trade data/item-modifier system
+and validated in-game before release. This temporary isolation reduces dead-API
+compile errors while we migrate the rest of the mod.
