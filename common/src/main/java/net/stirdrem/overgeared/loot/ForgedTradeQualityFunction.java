@@ -20,8 +20,8 @@ import net.stirdrem.overgeared.util.ForgingQualityHelper;
  * Creates the original per-villager-level forging qualities in data-driven
  * Minecraft 26.3 trades, while preserving the matching emerald price.
  *
- * The first cost stack is configured with base_price; the transient additional
- * trade cost adjusts it to the quality-specific final price. Unlike static
+ * The first cost stack uses the material base_price; the transient additional
+ * trade cost adjusts it using the original material × quality multiplier. Unlike static
  * vanilla item modifiers, this keeps quality and price on the same random roll.
  *
  * Only used for original forged offers at levels 1-3, where MASTER cannot roll,
@@ -56,7 +56,7 @@ public final class ForgedTradeQualityFunction extends LootItemConditionalFunctio
         }
         ForgingQuality quality = ForgingQualityHelper.rollQuality(context.getRandom(), villagerLevel);
         ForgingQualityHelper.applyQuality(stack, quality);
-        int finalPrice = ForgingQualityHelper.priceForQuality(quality);
+        int finalPrice = Math.max(1, Math.round(basePrice * ForgingQualityHelper.getDurabilityMultiplier(quality)));
         stack.set(DataComponents.ADDITIONAL_TRADE_COST, finalPrice - basePrice);
         return stack;
     }
