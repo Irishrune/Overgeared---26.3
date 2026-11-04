@@ -27,7 +27,7 @@ class BlockEntityRegistrationTests(unittest.TestCase):
         self.assertEqual(7,SRC.count("FabricBlockEntityTypeBuilder.create("))
         self.assertNotIn("BlockEntityType.Builder.of(",SRC)
         self.assertNotIn(".build(null)",SRC)
-        self.assertEqual(7,SRC.count(".build()"))
+        self.assertEqual(7,len(re.findall(r"\.\s*build\(\)", SRC)))
 
 if __name__=="__main__":
     unittest.main()
