@@ -1,3 +1,30 @@
+# Current status — Phase 19 (2026-11-04)
+
+**Fabric 26.3 port is NOT yet buildable or playable.** Draft pull request
+[#1](https://github.com/Irishrune/Overgeared---26.3/pull/1) carries the latest
+API migrations without changing `main`.
+
+- GitHub Actions with Java 25: **70 of 70 Python source regression tests pass**.
+- Real `:fabric:compileJava` still fails, but compiler errors declined from
+  **769 to 732** after this batch. These are javac diagnostic counts, not 732
+  independent gameplay bugs.
+- Fabric 26.3 extended menus, registry identifiers, crafting remainders, and
+  context-aware cooking-fuel components have been migrated at source level.
+- All three smelters use a server block-entity loot context for fuel durations,
+  retain container remainders when fuel is exhausted, drop remainders safely for
+  stacked fuel, and detect fuel components during hopper / shift-click routing.
+- Their saved inventory, burner, cooking progress, and XP fields now use
+  `ValueInput` / `ValueOutput` while preserving original field keys.
+- New source regression coverage is in
+  `port-tests/test_phase18_menu_api.py` and
+  `port-tests/test_phase19_cooking_fuel.py`.
+- **Not tested in a running client or multiplayer server.** Recipe-book
+  integration, smithing interfaces, sprites/renderers, arrows, advancement
+  triggers, Mixins, and other migrated APIs require further compilation and
+  gameplay verification. Do not load the port into the Forever World.
+
+---
+
 # Current status — Phase 9 (2026-11-03)
 
 **Source-only progress; not yet compilable/verified on Minecraft 26.3.** The live anvil craft path now calls the updated recipe assembly routine, which uses the matched forging-grid location to preserve components correctly. Malformed forge patterns are rejected; server anvil tracking uses server state; and incompatible 1.21.1 JEI/EMI/Sable adapters are excluded from the core build. The full Gradle compile remains blocked locally before compilation. See `PHASE-9-CHANGELOG.md` for tests, scope and remaining blockers.
