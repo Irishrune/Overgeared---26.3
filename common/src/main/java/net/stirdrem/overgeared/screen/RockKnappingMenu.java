@@ -264,7 +264,7 @@ public class RockKnappingMenu extends AbstractContainerMenu {
     }
 
     private void consumeInputRock() {
-        if (level.isClientSide) return;
+        if (level.isClientSide()) return;
 
         // Check both hands and consume from whichever has the rock
         ItemStack mainHand = player.getMainHandItem();

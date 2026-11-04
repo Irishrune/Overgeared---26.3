@@ -51,7 +51,7 @@ public class ToolCastItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             return calculateAndReturnMaterials(stack, player, hand);
         }
 

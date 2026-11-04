@@ -30,7 +30,8 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ConstantValue;
+import net.minecraft.core.Holder;
 import net.neoforged.fml.config.ModConfig;
 import net.stirdrem.overgeared.OvergearedMod;
 import net.stirdrem.overgeared.command.ModCommands;
@@ -137,7 +138,7 @@ public final class OvergearedFabric implements ModInitializer {
             for (LootInjections.Injection injection : injections) {
                 if (injection.table().equals(key.location())) {
                     tableBuilder.withPool(LootPool.lootPool()
-                            .setRolls(ConstantValue.exactly(1))
+                            .setRolls(Holder.direct(new ConstantValue(1)))
                             .when(LootItemRandomChanceCondition.randomChance(injection.chance()))
                             .add(LootItem.lootTableItem(injection.item().get())));
                 }

@@ -25,7 +25,7 @@ public class ContainerCoolingMixin {
     private void onInitMenu(AbstractContainerMenu menu, CallbackInfo ci) {
         ServerPlayer player = (ServerPlayer) (Object) this;
         Level level = player.level();
-        if (level.isClientSide) return;
+        if (level.isClientSide()) return;
         if (overgeared$isBlacklisted(menu)) return;
 
         for (Slot slot : menu.slots) {
@@ -44,7 +44,7 @@ public class ContainerCoolingMixin {
         if (menu == player.inventoryMenu) return;
 
         Level level = player.level();
-        if (level.isClientSide) return;
+        if (level.isClientSide()) return;
         if (overgeared$isBlacklisted(menu)) return;
 
         for (Slot slot : menu.slots) {

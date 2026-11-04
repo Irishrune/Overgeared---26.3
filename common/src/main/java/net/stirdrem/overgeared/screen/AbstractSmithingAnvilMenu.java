@@ -505,7 +505,7 @@ public class AbstractSmithingAnvilMenu extends RecipeBookMenu<RecipeInput, Forgi
 
     @Override
     public void clearCraftingContent() {
-        if (this.player.level().isClientSide) return;
+        if (this.player.level().isClientSide()) return;
         this.craftingContainer.clearContent();
     }
 
@@ -557,7 +557,7 @@ public class AbstractSmithingAnvilMenu extends RecipeBookMenu<RecipeInput, Forgi
             return;
         }
 
-        if (player.level().isClientSide) return;
+        if (player.level().isClientSide()) return;
 
         RecipeHolder<ForgingRecipe> recipe =
                 (RecipeHolder<ForgingRecipe>) recipeHolder;
