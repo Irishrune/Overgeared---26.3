@@ -62,5 +62,21 @@ class CookingFuelMigrationTests(unittest.TestCase):
                 self.assertIn("Services.PLATFORM.isCookingFuel(", source)
                 self.assertNotIn("Services.PLATFORM.getBurnTime(", source)
 
+    def test_smelters_use_version_263_save_and_load_contract(self):
+        for name, _ in SMELTERS:
+            with self.subTest(name=name):
+                source = (COMMON / "block/entity" / name).read_text(encoding="utf-8")
+                self.assertIn("protected void saveAdditional(ValueOutput output)", source)
+                self.assertIn("protected void loadAdditional(ValueInput input)", source)
+                self.assertIn("ContainerHelper.saveAllItems(output,", source)
+                self.assertIn("ContainerHelper.loadAllItems(input,", source)
+                self.assertIn('output.putFloat("storedXp", storedExperience)', source)
+                self.assertIn('storedExperience = input.getFloatOr("storedXp", 0.0F)', source)
+                for key in ("burnTime", "maxBurnTime", "cookTime", "cookTimeTotal"):
+                    self.assertIn(f'output.putInt("{key}", {key})', source)
+                    self.assertIn(f'{key} = input.getIntOr("{key}", 0)', source)
+                self.assertNotIn("HolderLookup.Provider registries", source)
+                self.assertNotIn("tag.getInt(", source)
+
 if __name__ == "__main__":
     unittest.main()
