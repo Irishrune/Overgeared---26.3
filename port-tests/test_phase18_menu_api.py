@@ -32,5 +32,13 @@ class ExtendedMenuBridgeTests(unittest.TestCase):
         self.assertIn("new RegistryFriendlyByteBuf(Unpooled.wrappedBuffer(data), inventory.player.registryAccess())", SOURCE)
 
 
+    def test_migrated_vanilla_263_signatures(self):
+        self.assertIn("register.getRegistryKey().identifier()", SOURCE)
+        self.assertNotIn("register.getRegistryKey().location()", SOURCE)
+        self.assertIn("CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)", SOURCE)
+        self.assertNotIn("CreativeModeTab.builder()", SOURCE)
+        self.assertIn("MapCodec.assumeMapUnsafe(Ingredient.CODEC)", SOURCE)
+        self.assertNotIn("Ingredient.CODEC_NONEMPTY", SOURCE)
+
 if __name__ == "__main__":
     unittest.main()
