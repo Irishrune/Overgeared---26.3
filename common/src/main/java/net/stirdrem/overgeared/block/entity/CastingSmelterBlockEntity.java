@@ -104,6 +104,9 @@ public class CastingSmelterBlockEntity extends BaseContainerBlockEntity implemen
     // ================= TICK =================
 
     public static void tick(Level level, BlockPos pos, BlockState state, CastingSmelterBlockEntity be) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return;
+        }
         boolean wasLit = be.isLit();
         boolean dirty = false;
 
@@ -113,12 +116,17 @@ public class CastingSmelterBlockEntity extends BaseContainerBlockEntity implemen
         ItemStack fuel = be.itemHandler.getStackInSlot(SLOT_FUEL);
 
         if (be.burnTime == 0 && be.canSmelt()) {
-            be.maxBurnTime = be.burnTime = Services.PLATFORM.getBurnTime(fuel);
+            be.maxBurnTime = be.burnTime = Services.PLATFORM.getBurnTime(fuel, be.getLootContext(serverLevel));
             if (be.burnTime > 0 && !fuel.isEmpty()) {
-                Item remainder = fuel.getItem().getCraftingRemainingItem();
+                ItemStack remainder = Services.PLATFORM.getCraftingRemainder(fuel);
                 fuel.shrink(1);
-                if (fuel.isEmpty() && remainder != null)
-                    be.itemHandler.setStackInSlot(SLOT_FUEL, new ItemStack(remainder));
+                if (!remainder.isEmpty()) {
+                    if (fuel.isEmpty()) {
+                        be.itemHandler.setStackInSlot(SLOT_FUEL, remainder);
+                    } else {
+                        Containers.dropItemStack(serverLevel, pos.getX(), pos.getY(), pos.getZ(), remainder);
+                    }
+                }
                 dirty = true;
             }
         }
@@ -434,7 +442,7 @@ public class CastingSmelterBlockEntity extends BaseContainerBlockEntity implemen
 
         // Fuel slot
         if (slot == SLOT_FUEL) {
-            return Services.PLATFORM.getBurnTime(stack) > 0;
+            return Services.PLATFORM.isCookingFuel(stack);
         }
 
         // Input slot
