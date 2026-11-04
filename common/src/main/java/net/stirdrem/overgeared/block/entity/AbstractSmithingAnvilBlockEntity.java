@@ -2,9 +2,8 @@ package net.stirdrem.overgeared.block.entity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -15,11 +14,12 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ShieldItem;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -55,10 +55,7 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
     protected int maxProgress;
     protected int hitRemains;
     protected long busyUntilGameTime = 0L;
-    protected UUID ownerUUID = null;
-    protected Map<BlockPos, UUID> occupiedAnvils = Collections.synchronizedMap(new HashMap<>());
     protected AnvilTier anvilTier;
-    protected long sessionStartTime = 0L; // optional, for timeout logic
     protected ItemStack failedResult;
     protected ForgingRecipe lastRecipe = null;
     protected ItemStack lastBlueprint = ItemStack.EMPTY;
@@ -151,65 +148,40 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        tag.putInt("hitRemains", hitRemains);
-        tag.putInt("progress", progress);
-        tag.putInt("maxProgress", maxProgress);
-        tag.put("inventory", itemHandler.serializeNBT(registries));
+    protected void saveAdditional(ValueOutput output) {
+        // The base class saves the inventory and owner. Do not duplicate
+        // these fields in the subclass: this previously shadowed ownerUUID.
+        super.saveAdditional(output);
+        output.putInt("hitRemains", hitRemains);
+        output.putInt("progress", progress);
+        output.putInt("maxProgress", maxProgress);
 
-        if (ownerUUID != null) {
-            tag.putUUID("ownerUUID", ownerUUID);
-            tag.putLong("sessionStartTime", sessionStartTime);
-        }
-
-        // Save occupiedAnvils
-        ListTag occupiedList = new ListTag();
+        ValueOutput.ValueOutputList occupiedList = output.childrenList("occupiedAnvils");
         for (Map.Entry<BlockPos, UUID> entry : occupiedAnvils.entrySet()) {
-            CompoundTag entryTag = new CompoundTag();
+            ValueOutput child = occupiedList.addChild();
             BlockPos pos = entry.getKey();
-            entryTag.putInt("x", pos.getX());
-            entryTag.putInt("y", pos.getY());
-            entryTag.putInt("z", pos.getZ());
-            entryTag.putUUID("uuid", entry.getValue());
-            occupiedList.add(entryTag);
+            child.putInt("x", pos.getX());
+            child.putInt("y", pos.getY());
+            child.putInt("z", pos.getZ());
+            child.store("uuid", UUIDUtil.CODEC, entry.getValue());
         }
-        tag.put("occupiedAnvils", occupiedList);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        if (tag.contains("inventory")) {
-            itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
-        }
-        if (tag.contains("hitRemains")) {
-            hitRemains = tag.getInt("hitRemains");
-        }
-        if (tag.contains("progress")) {
-            progress = tag.getInt("progress");
-        }
-        if (tag.contains("maxProgress")) {
-            maxProgress = tag.getInt("maxProgress");
-        }
-        if (tag.hasUUID("ownerUUID")) {
-            ownerUUID = tag.getUUID("ownerUUID");
-            sessionStartTime = tag.getLong("sessionStartTime");
-        } else {
-            ownerUUID = null;
-        }
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        hitRemains = input.getIntOr("hitRemains", 0);
+        progress = input.getIntOr("progress", 0);
+        maxProgress = input.getIntOr("maxProgress", 0);
 
-        // Load occupiedAnvils
         occupiedAnvils.clear();
-        if (tag.contains("occupiedAnvils", CompoundTag.TAG_LIST)) {
-            ListTag occupiedList = tag.getList("occupiedAnvils", CompoundTag.TAG_COMPOUND);
-            for (int i = 0; i < occupiedList.size(); i++) {
-                CompoundTag entryTag = occupiedList.getCompound(i);
-                int x = entryTag.getInt("x");
-                int y = entryTag.getInt("y");
-                int z = entryTag.getInt("z");
-                UUID uuid = entryTag.getUUID("uuid");
-                occupiedAnvils.put(new BlockPos(x, y, z), uuid);
+        for (ValueInput child : input.childrenListOrEmpty("occupiedAnvils")) {
+            UUID occupant = child.read("uuid", UUIDUtil.CODEC).orElse(null);
+            if (occupant != null) {
+                occupiedAnvils.put(new BlockPos(
+                        child.getIntOr("x", 0),
+                        child.getIntOr("y", 0),
+                        child.getIntOr("z", 0)), occupant);
             }
         }
     }
@@ -300,7 +272,9 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
                             ModAdvancementTriggers.FORGING_QUALITY.get()
                                     .trigger(serverPlayer, quality.getDisplayName());
                         }
-                        if (!(result.getItem() instanceof ArmorItem) &&
+                        var equippable = result.get(DataComponents.EQUIPPABLE);
+                        boolean isArmor = equippable != null && equippable.slot().isArmor();
+                        if (!isArmor &&
                                 !(result.getItem() instanceof ShieldItem) &&
                                 recipe.hasPolishing()) {
                             result.set(ModComponents.POLISHED.get(), false);
@@ -662,29 +636,9 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        CompoundTag tag = super.getUpdateTag(registries);
-        tag.put("inventory", itemHandler.serializeNBT(registries));
-        tag.putInt("progress", progress);
-        tag.putInt("maxProgress", maxProgress);
-        tag.putInt("hitRemains", hitRemains);
-        return tag;
-    }
-
-    // Overrides NeoForge's IBlockEntityExtension#handleUpdateTag; vanilla only calls loadWithComponents.
-    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
-        this.loadWithComponents(tag, registries);
-        if (tag.contains("progress")) {
-            this.progress = tag.getInt("progress");
-        }
-        if (tag.contains("maxProgress")) {
-            this.maxProgress = tag.getInt("maxProgress");
-        }
-        if (tag.contains("hitRemains")) {
-            this.hitRemains = tag.getInt("hitRemains");
-        }
-    }
+    // BaseSmithingAnvilBlockEntity#getUpdateTag uses saveWithoutMetadata,
+    // which invokes this subclass's saveAdditional and includes progress and
+    // the 3x3 inventory in chunk-load/update packets.
 
     protected boolean matchesRecipeExactly(ForgingRecipe recipe) {
         // Create a wrapper for recipe matching
