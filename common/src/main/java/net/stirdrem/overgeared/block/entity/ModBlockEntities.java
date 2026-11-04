@@ -16,25 +16,25 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("smithing_table_be", () ->
                     FabricBlockEntityTypeBuilder.create(SteelSmithingAnvilBlockEntity::new,
                                     ModBlocks.SMITHING_ANVIL.get()).
-                            build(null));
+                            build());
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TierASmithingAnvilBlockEntity>> TIER_A_SMITHING_ANVIL_BE =
             BLOCK_ENTITIES.register("tier_a_smithing_table_be", () ->
                     FabricBlockEntityTypeBuilder.create(TierASmithingAnvilBlockEntity::new,
                                     ModBlocks.TIER_A_SMITHING_ANVIL.get()).
-                            build(null));
+                            build());
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TierBSmithingAnvilBlockEntity>> TIER_B_SMITHING_ANVIL_BE =
             BLOCK_ENTITIES.register("tier_b_smithing_table_be", () ->
                     FabricBlockEntityTypeBuilder.create(TierBSmithingAnvilBlockEntity::new,
                                     ModBlocks.TIER_B_SMITHING_ANVIL.get()).
-                            build(null));
+                            build());
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<StoneSmithingAnvilBlockEntity>> STONE_SMITHING_ANVIL_BE =
             BLOCK_ENTITIES.register("stone_smithing_table_be", () ->
                     FabricBlockEntityTypeBuilder.create(StoneSmithingAnvilBlockEntity::new,
                                     ModBlocks.STONE_SMITHING_ANVIL.get()).
-                            build(null));
+                            build());
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<AlloySmelterBlockEntity>> ALLOY_FURNACE_BE =
             BLOCK_ENTITIES.register("alloy_furnace_be", () ->
                     FabricBlockEntityTypeBuilder.create(AlloySmelterBlockEntity::new,
