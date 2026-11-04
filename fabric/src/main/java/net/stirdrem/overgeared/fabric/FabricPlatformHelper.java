@@ -60,7 +60,7 @@ public class FabricPlatformHelper implements IPlatformHelper {
     @Override
     @SuppressWarnings("unchecked")
     public <R> void register(DeferredRegister<R> register) {
-        Registry<R> registry = (Registry<R>) BuiltInRegistries.REGISTRY.get(register.getRegistryKey().identifier());
+        Registry<R> registry = (Registry<R>) BuiltInRegistries.REGISTRY.getValue(register.getRegistryKey().identifier());
         if (registry == null) {
             throw new IllegalStateException("Unknown registry " + register.getRegistryKey().identifier());
         }
