@@ -1,23 +1,44 @@
-# Dynamic forged villager-trade migration — Minecraft 26.3
+# Quality-aware villager trades — Minecraft 26.3 (source-level migration)
 
-The old `VillagerTrades.ItemListing` approach is no longer compatible with
-Minecraft 26.3. This phase adds a custom **loot item modifier**
-(`overgeared:set_forged_trade_quality`) backed by the original
-`ForgingQualityHelper.rollQuality` and `priceForQuality` logic.
+This phase defines **all 38 original extra forged-equipment trade offers** through
+Minecraft 26.3 data-driven `villager_trade` entries and additive
+`minecraft:weaponsmith`, `minecraft:toolsmith`, and `minecraft:armorer`
+trade tags.
 
-- The trade JSON starts with a baseline emerald cost of **7**.
-- The modifier rolls an original level-dependent quality **once** and applies
-  `overgeared:forging_quality` to the resulting item.
-- It sets Minecraft's transient `minecraft:additional_trade_cost` to the
-  difference between the rolled-quality price and baseline (7).
-- For original forged gear at villager levels 1–3 the roll cannot produce
-  Master quality, so the old one-use-only Masterwork branch does not apply.
-- First migrated offer: Copper Sword, novice Weaponsmith, with 12 uses and 2 XP.
+## Preserved offer rules
 
-**Not completed:** other equipment's JSON offers, vanilla trade quality wrapping,
-wandering blueprint trade generation, and removal/port of obsolete
-`VillagerTrades` Java code. This code is not playable until the mod compiles.
+- **Copper (level 1):** 12 uses, 2 XP, base emerald price 8
+- **Iron (level 2):** 10 uses, 5 XP, base emerald price 14
+- **Golden (level 2):** 10 uses, 5 XP, base emerald price 16
+- **Steel (level 3):** 6 uses, 10 XP, base emerald price 24
+- Reputation multiplier: 0.05 throughout.
+- Base prices are adjusted *once*, using the same quality-dependent material
+  multiplier as the former `QualityWrappedTrade`. The new
+  `overgeared:set_forged_trade_quality` loot modifier applies the
+  `overgeared:forging_quality` component and sets Minecraft's temporary
+  `minecraft:additional_trade_cost` component to the price difference.
+- Levels 1–2 roll **Poor 22%, Well 70%, Expert 8%**; level 3 rolls
+  **Well 64%, Expert 30%, Perfect 6%**, preserving the old helper's thresholds.
+- The legacy `ForgedItemTrade` constructor also assigned a preliminary quality
+  and price, but the normal `QualityWrappedTrade` wrapper replaced these on
+  forgeable equipment; the data-driven modifier models the final offer.
 
-Minecraft 26.3 renamed `given_item_modifiers` to `given_item_modifier`;
-loot item functions now identify type using the `type` key.
-See official 26.3 release notes.
+These additions are additive (`replace: false`) and do not overwrite vanilla
+trade definitions. Minecraft still chooses offers by its existing trade sets,
+so adding 38 possibilities does not make villagers stock all 38 simultaneously.
+
+## Important remaining work
+
+1. This is **not a successful compile or runtime test**: existing old
+   `VillagerTrades.ItemListing` Java code still blocks full compilation,
+   and it must only be retired once its remaining features are migrated.
+2. Vanilla equipment trades previously wrapped with randomly rolled forging quality
+   are not yet migrated.
+3. Wandering trader blueprints still require randomized quality and tool type
+   with accurate emerald prices.
+4. Trade prices and components need a disposable-world test once the mod starts,
+   especially around item-component registration and trade set reload.
+
+Minecraft 26.3 changed the inline trade field name to
+`given_item_modifier` and the item function discriminator to `type`;
+the older plural and `function` keys would be incorrect here.

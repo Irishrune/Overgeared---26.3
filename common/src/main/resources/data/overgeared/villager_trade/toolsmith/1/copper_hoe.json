@@ -1,0 +1,18 @@
+{
+  "wants": {
+    "id": "minecraft:emerald",
+    "count": 8
+  },
+  "gives": {
+    "id": "overgeared:copper_hoe",
+    "count": 1
+  },
+  "given_item_modifier": {
+    "type": "overgeared:set_forged_trade_quality",
+    "villager_level": 1,
+    "base_price": 8
+  },
+  "max_uses": 12,
+  "xp": 2,
+  "reputation_discount": 0.05
+}

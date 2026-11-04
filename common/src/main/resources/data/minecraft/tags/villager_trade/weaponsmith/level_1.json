@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
+    "overgeared:weaponsmith/1/copper_sword_blade",
     "overgeared:weaponsmith/1/copper_sword"
   ]
 }

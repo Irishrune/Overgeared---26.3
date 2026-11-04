@@ -1,0 +1,18 @@
+{
+  "wants": {
+    "id": "minecraft:emerald",
+    "count": 16
+  },
+  "gives": {
+    "id": "overgeared:golden_hoe_head",
+    "count": 1
+  },
+  "given_item_modifier": {
+    "type": "overgeared:set_forged_trade_quality",
+    "villager_level": 2,
+    "base_price": 16
+  },
+  "max_uses": 10,
+  "xp": 5,
+  "reputation_discount": 0.05
+}
