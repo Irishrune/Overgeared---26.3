@@ -1,3 +1,19 @@
+# Current status — Phases 20–22 (2026-11-04)
+
+**This is a source migration in draft PR #1, not a runnable Fabric 26.3 mod.** Do not load it into the Forever World.
+
+- Java 25 CI compilation errors have decreased from **732** to **619** (a reduction of 113 javac diagnostics in this batch). The full Minecraft build still fails.
+- The old generic `RecipeBookMenu` menu contract was replaced by the 26.3 interface, while retaining the manual 3×3 forging grid, hammer slot, blueprint slot, and forged output slot. Recipe placement now preflights inventory before transferring resources; incomplete placements do not clear the grid. The actual minigame still requires runtime verification.
+- `ItemStackHandler`, `BaseSmithingAnvilBlockEntity` and `AbstractSmithingAnvilBlockEntity` now use 26.3 `ValueInput`/`ValueOutput` for inventory, progress, player-ownership and occupied-anvil data. Original inventory `Items`/`Slot`/`Size` and progress keys were preserved, and redundant shadowed owner/session fields were removed.
+- All seven anvil and smelter block entity registrations use Fabric's 26.3 `FabricBlockEntityTypeBuilder` with **unchanged registry IDs**.
+- The new smithing source tests live in `port-tests/test_phase20_smithing_menu.py`, `port-tests/test_phase21_smithing_persistence.py`, and `port-tests/test_phase22_block_entity_registry.py`.
+- **Verified checks:** 79/79 tests passed before the additional phase 22 regression test; this phase 22 test was corrected to support multiline `.build()` and requires latest-branch CI revalidation. The 619-error compiler result was verified before adding/correcting this final test.
+- **Not tested:** full compilation, actual client startup, dedicated-server startup, recipe-book UI, block placement/break behavior, or multiplayer forging/ownership.
+
+Key remaining work includes block interaction overrides in 26.3, renderer/UI changes, arrows, advancements, recipe-book categories, network packet APIs, and Mixins.
+
+---
+
 # Current status — Phase 19 (2026-11-04)
 
 **Fabric 26.3 port is NOT yet buildable or playable.** Draft pull request
