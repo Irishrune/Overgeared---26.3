@@ -29,7 +29,7 @@ public final class QualityBreak {
         int currentDamage = stack.getDamageValue();
         int newDamage = currentDamage + amount;
         int max = stack.getMaxDamage();
-        RandomSource random = level.random;
+        RandomSource random = level.getRandom();
         if (currentDamage < max && newDamage >= max) {
             if (!ServerConfig.ENABLE_QUALITY_BREAK_SYSTEM.get()) {
                 return false;
@@ -65,7 +65,7 @@ public final class QualityBreak {
                         SoundEvents.ITEM_BREAK,
                         SoundSource.PLAYERS,
                         0.8F,
-                        0.8F + entity.level().random.nextFloat() * 0.4F
+                        0.8F + entity.level().getRandom().nextFloat() * 0.4F
                 );
             }
 

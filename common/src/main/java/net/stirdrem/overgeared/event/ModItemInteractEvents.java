@@ -31,7 +31,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LayeredCauldronBlock;
@@ -264,7 +264,7 @@ public class ModItemInteractEvents {
         }
         Optional<RecipeHolder<ForgingRecipe>> recipeOpt = anvilBE.getCurrentRecipeHolder();
 
-        if (level.getGameRules().getBoolean(GameRules.RULE_LIMITED_CRAFTING)) {
+        if (serverPlayer.getServer() != null && serverPlayer.getServer().getGameRules().get(GameRules.LIMITED_CRAFTING)) {
             if (!serverPlayer.getRecipeBook().contains(recipeOpt.get())) {
                 serverPlayer.sendSystemMessage(
                         Component.translatable("message.overgeared.no_recipe")
@@ -458,7 +458,7 @@ public class ModItemInteractEvents {
 
         BlockPos pos = event.getPos();
         // Drop roll
-        if (level.random.nextFloat() < tool.dropChance()) {
+        if (level.getRandom().nextFloat() < tool.dropChance()) {
             ItemStack dropStack = tool.dropItem().copy();
 
             double sx = pos.getX() + 0.5;
@@ -485,7 +485,7 @@ public class ModItemInteractEvents {
         }
 
         // Tool damage / break roll
-        if (level.random.nextFloat() < tool.breakChance()) {
+        if (level.getRandom().nextFloat() < tool.breakChance()) {
 
             if (heldItem.isDamageableItem()) {
                 heldItem.hurtAndBreak(1, player, LivingEntity.getSlotForHand(event.getHand()));

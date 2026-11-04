@@ -353,7 +353,7 @@ public class NetherAlloySmelterBlockEntity extends BaseContainerBlockEntity impl
                     SoundEvents.EXPERIENCE_ORB_PICKUP,
                     SoundSource.PLAYERS,
                     0.5F,
-                    this.level.random.nextFloat() * 0.1F + 0.9F
+                    this.level.getRandom().nextFloat() * 0.1F + 0.9F
             );
 
             storedExperience = 0;
