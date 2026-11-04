@@ -200,3 +200,15 @@ The next actionable step is **compiler-driven, feature-preserving migrations**, 
 **Run:** https://github.com/Irishrune/Overgeared---26.3/actions/runs/41736950093
 
 The source regression tests **pass** after fixing both `ConfigRegistry.INSTANCE.register(...)` call sites. The Java 25/Fabric compiler now reports **896 errors** (down from 899 on the prior widened-compiler run). The first missing symbols are in the villager trade system; the remaining errors also affect GUI/menu APIs, renderer types, custom arrows and other Minecraft 26.3 migrations. This confirms the recent compatibility fixes, but is **not** a playable build.
+
+
+### Quality-aware trades phase and current compile baseline — November 3, 2026
+
+**Java 25 CI run:** https://github.com/Irishrune/Overgeared---26.3/actions/runs/41752669891
+
+- **Isolated source regression tests:** passing, including checks for all 38 data-driven forged equipment offers.
+- **Compilation:** failed with **837 errors**, down from **896** before isolating the obsolete 1.21.1 villager-trade bridge (59 fewer reported errors).
+- **New quality item modifier:** no class-specific compiler errors reported for `ForgedTradeQualityFunction.java` in this batch; that does **not** establish successful mod compilation or runtime data loading.
+- **Original 1.21.1 trade bridge:** archived and excluded from the active build after migrating 38 forged offers and 2 steel barter offers. Existing vanilla gear quality wrappers and random wandering-trader blueprints **remain unimplemented** in the new data-driven path.
+
+Next compiler focus: Fabric entry-point event APIs, recipe-book Mixins/screens, workstation menus, custom arrows, client rendering. Test against Minecraft 26.3 client and dedicated-server before distributing a JAR.
