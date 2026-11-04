@@ -8,6 +8,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -96,6 +97,9 @@ public class AlloySmelterBlockEntity extends BaseContainerBlockEntity implements
     // Tick logic
     // --------------------------------------------------
     public static void tick(Level level, BlockPos pos, BlockState state, AlloySmelterBlockEntity be) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return;
+        }
         boolean wasLit = be.burnTime > 0;
         boolean changed = false;
 
@@ -107,12 +111,18 @@ public class AlloySmelterBlockEntity extends BaseContainerBlockEntity implements
         ItemStack fuel = be.itemHandler.getStackInSlot(4);
 
         if (be.burnTime == 0 && be.canSmelt()) {
-            be.maxBurnTime = be.burnTime = Services.PLATFORM.getBurnTime(fuel);
+            be.maxBurnTime = be.burnTime = Services.PLATFORM.getBurnTime(fuel, be.getLootContext(serverLevel));
             if (be.burnTime > 0 && !fuel.isEmpty()) {
                 ItemStack fuelContainer = Services.PLATFORM.getCraftingRemainder(fuel);
                 fuel.shrink(1);
-                if (fuel.isEmpty() && !fuelContainer.isEmpty())
-                    be.itemHandler.setStackInSlot(4, fuelContainer);
+                if (!fuelContainer.isEmpty()) {
+                    if (fuel.isEmpty()) {
+                        be.itemHandler.setStackInSlot(4, fuelContainer);
+                    } else {
+                        // Keep stacked fuel; drop the separate container as vanilla does.
+                        Containers.dropItemStack(serverLevel, pos.getX(), pos.getY(), pos.getZ(), fuelContainer);
+                    }
+                }
                 changed = true;
             }
         }
@@ -413,7 +423,7 @@ public class AlloySmelterBlockEntity extends BaseContainerBlockEntity implements
     @Override
     public boolean canPlaceItemThroughFace(int index, ItemStack stack, @Nullable Direction direction) {
         if (index == 5) return false;
-        if (index == 4) return Services.PLATFORM.getBurnTime(stack) > 0;
+        if (index == 4) return Services.PLATFORM.isCookingFuel(stack);
         return true;
     }
 
