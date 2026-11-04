@@ -4,9 +4,7 @@ import net.stirdrem.overgeared.recipe.RecipeLookups;
 import net.stirdrem.overgeared.platform.Services;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -27,6 +25,8 @@ import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -373,25 +373,25 @@ public class NetherAlloySmelterBlockEntity extends BaseContainerBlockEntity impl
     // NBT
     // --------------------------------------------------
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        ContainerHelper.saveAllItems(tag, this.inventory, registries);
-        tag.putInt("burnTime", burnTime);
-        tag.putInt("maxBurnTime", maxBurnTime);
-        tag.putInt("cookTime", cookTime);
-        tag.putInt("cookTimeTotal", cookTimeTotal);
-        tag.putFloat("storedXp", storedExperience);
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        ContainerHelper.saveAllItems(output, this.inventory);
+        output.putInt("burnTime", burnTime);
+        output.putInt("maxBurnTime", maxBurnTime);
+        output.putInt("cookTime", cookTime);
+        output.putInt("cookTimeTotal", cookTimeTotal);
+        output.putFloat("storedXp", storedExperience);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        ContainerHelper.loadAllItems(tag, this.inventory, registries);
-        burnTime = tag.getInt("burnTime");
-        maxBurnTime = tag.getInt("maxBurnTime");
-        cookTime = tag.getInt("cookTime");
-        cookTimeTotal = tag.getInt("cookTimeTotal");
-        storedExperience = tag.getFloat("storedXp");
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        ContainerHelper.loadAllItems(input, this.inventory);
+        burnTime = input.getIntOr("burnTime", 0);
+        maxBurnTime = input.getIntOr("maxBurnTime", 0);
+        cookTime = input.getIntOr("cookTime", 0);
+        cookTimeTotal = input.getIntOr("cookTimeTotal", 0);
+        storedExperience = input.getFloatOr("storedXp", 0.0F);
     }
 
     public void drops() {
