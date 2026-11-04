@@ -54,5 +54,13 @@ class CookingFuelMigrationTests(unittest.TestCase):
                 self.assertNotIn("new ItemStack(remainder)", source)
 
 
+    def test_shift_click_fuel_slots_use_component_check(self):
+        for name in ("AlloySmelterMenu.java", "CastingSmelterMenu.java",
+                     "NetherAlloySmelterMenu.java"):
+            with self.subTest(name=name):
+                source = (COMMON / "screen" / name).read_text(encoding="utf-8")
+                self.assertIn("Services.PLATFORM.isCookingFuel(", source)
+                self.assertNotIn("Services.PLATFORM.getBurnTime(", source)
+
 if __name__ == "__main__":
     unittest.main()
