@@ -34,7 +34,7 @@ public class KnappableRockItem extends Item {
             return InteractionResultHolder.pass(stack);
         }
 
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             player.level().playSound(null, player.blockPosition(), SoundEvents.STONE_PLACE,
                     SoundSource.PLAYERS, 0.6f, 1.0f);
 

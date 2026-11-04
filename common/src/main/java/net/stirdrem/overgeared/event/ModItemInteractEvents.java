@@ -74,7 +74,7 @@ import net.stirdrem.overgeared.screen.RockKnappingMenuProvider;
 import net.stirdrem.overgeared.util.ModTags;
 import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 import static net.stirdrem.overgeared.util.ItemUtils.copyComponentsExceptHeated;
@@ -818,7 +818,7 @@ public class ModItemInteractEvents {
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
 
-        if (!player.level().isClientSide && player instanceof ServerPlayer serverPlayer) {
+        if (!player.level().isClientSide() && player instanceof ServerPlayer serverPlayer) {
 
             /*player.level().playSound(
                     null,

@@ -123,7 +123,7 @@ public final class HeatedItem {
     }
 
     public static boolean handleCoolingContainer(Slot slot, Level level, boolean skipThrottle) {
-        if (level.isClientSide) return false;
+        if (level.isClientSide()) return false;
         ItemStack stack = slot.getItem();
 
         if (!hasCooled(stack, level, skipThrottle)) return false;
@@ -140,7 +140,7 @@ public final class HeatedItem {
     }
 
     public static boolean handleCoolingContainer(IItemHandler handler, int index, Level level) {
-        if (level.isClientSide) return false;
+        if (level.isClientSide()) return false;
         ItemStack stack = handler.getStackInSlot(index);
 
         if (!hasCooled(stack, level)) return false;

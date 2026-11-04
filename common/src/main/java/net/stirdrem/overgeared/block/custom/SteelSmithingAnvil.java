@@ -88,7 +88,7 @@ public class SteelSmithingAnvil extends AbstractSmithingAnvil {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level pLevel, BlockState pState, BlockEntityType<T> pBlockEntityType) {
-        if (!pLevel.isClientSide && pBlockEntityType == ModBlockEntities.STEEL_SMITHING_ANVIL_BE.get()) {
+        if (!pLevel.isClientSide() && pBlockEntityType == ModBlockEntities.STEEL_SMITHING_ANVIL_BE.get()) {
             return createTickerHelper(pBlockEntityType, ModBlockEntities.STEEL_SMITHING_ANVIL_BE.get(),
                     (level, pos, state, blockEntity) -> blockEntity.tick(level, pos, state));
         }
