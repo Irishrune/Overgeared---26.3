@@ -32,6 +32,11 @@ class ExtendedMenuBridgeTests(unittest.TestCase):
         self.assertIn("new RegistryFriendlyByteBuf(Unpooled.wrappedBuffer(data), inventory.player.registryAccess())", SOURCE)
 
 
+    def test_crafting_remainders_create_fresh_stacks(self):
+        self.assertIn("ItemStackTemplate remainder = stack.getItem().getCraftingRemainder();", SOURCE)
+        self.assertIn("remainder == null ? ItemStack.EMPTY : remainder.create()", SOURCE)
+        self.assertNotIn("stack.getRecipeRemainder()", SOURCE)
+
     def test_migrated_vanilla_263_signatures(self):
         self.assertIn("register.getRegistryKey().identifier()", SOURCE)
         self.assertIn("BuiltInRegistries.REGISTRY.getValue(", SOURCE)
