@@ -18,7 +18,7 @@ class Fabric263CallbackMigrationTests(unittest.TestCase):
     def test_creative_group_uses_vanilla_builder(self):
         source = (FABRIC / "FabricPlatformHelper.java").read_text(encoding="utf-8")
         self.assertNotIn("FabricItemGroup", source)
-        self.assertIn("return CreativeModeTab.builder();", source)
+        self.assertIn("return CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0);", source)
 
     def test_config_registry_uses_26_3_v5_api(self):
         source = (FABRIC / "OvergearedFabric.java").read_text(encoding="utf-8")
