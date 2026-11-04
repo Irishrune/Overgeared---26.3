@@ -3,8 +3,7 @@ package net.stirdrem.overgeared.fabric;
 import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
@@ -24,6 +23,7 @@ import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
@@ -46,11 +46,17 @@ import net.stirdrem.overgeared.networking.ModPackets;
 import net.stirdrem.overgeared.networking.PacketContext;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 public final class OvergearedFabric implements ModInitializer {
+    // Tracked on the server thread. Retaining the previous Level lets us release
+    // the actual old anvil when the player changes dimensions mid-forge.
+    private static final Map<UUID, Level> LAST_PLAYER_WORLDS = new HashMap<>();
 
     @Override
     public void onInitialize() {
@@ -151,21 +157,39 @@ public final class OvergearedFabric implements ModInitializer {
     private static void registerLifecycleEvents() {
         ServerLifecycleEvents.SERVER_STARTING.register(server -> FabricPlatformHelper.currentServer = server);
         ServerLifecycleEvents.SERVER_STOPPING.register(ModEvents::onServerStopping);
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> FabricPlatformHelper.currentServer = null);
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            FabricPlatformHelper.currentServer = null;
+            LAST_PLAYER_WORLDS.clear();
+        });
 
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             // NeoForge fires the player tick for each player before the end of the server tick
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                Level currentWorld = player.level();
+                Level previousWorld = LAST_PLAYER_WORLDS.put(player.getUUID(), currentWorld);
+                if (previousWorld != null && previousWorld != currentWorld) {
+                    ModEvents.resetMinigameForPlayer(player, previousWorld);
+                }
                 ModEvents.onPlayerTick(player);
             }
             ModEvents.onServerTick();
         });
 
-        ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> ModEvents.onPlayerJoinWorld(entity));
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> ModEvents.onPlayerJoinWorld(handler.getPlayer()));
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> ModEvents.onPlayerDisconnect(handler.getPlayer()));
-        ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) ->
-                ModEvents.onPlayerChangedDimension(player));
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            ServerPlayer player = handler.getPlayer();
+            LAST_PLAYER_WORLDS.put(player.getUUID(), player.level());
+            ModEvents.onPlayerJoinWorld(player);
+        });
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            ServerPlayer player = handler.getPlayer();
+            LAST_PLAYER_WORLDS.remove(player.getUUID());
+            ModEvents.onPlayerDisconnect(player);
+        });
+        ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
+            Level previousWorld = LAST_PLAYER_WORLDS.getOrDefault(oldPlayer.getUUID(), oldPlayer.level());
+            ModEvents.resetMinigameForPlayer(newPlayer, previousWorld);
+            LAST_PLAYER_WORLDS.put(newPlayer.getUUID(), newPlayer.level());
+        });
     }
 
     // ---- Interactions ----

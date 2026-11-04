@@ -110,26 +110,33 @@ public class ModEvents {
     }
 
     public static void resetMinigameForPlayer(ServerPlayer player) {
+        if (player != null) {
+            resetMinigameForPlayer(player, player.level());
+        }
+    }
+
+    /**
+     * The origin world matters after a dimension transfer: player.level() now
+     * references the destination, but the owned smithing anvil is in the origin.
+     */
+    public static void resetMinigameForPlayer(ServerPlayer player, Level anvilWorld) {
         if (player == null)
             return;
         UUID playerId = player.getUUID();
-        // Resets the client even if it isn't tracked at an anvil
         PacketDistributor.sendToPlayer(player, new OnlyResetMinigameS2CPacket());
-        if (ModItemInteractEvents.playerAnvilPositions.containsKey(playerId)) {
-            BlockPos anvilPos = ModItemInteractEvents.playerAnvilPositions.get(playerId);
-            BlockEntity be = player.level().getBlockEntity(anvilPos);
-
+        BlockPos anvilPos = ModItemInteractEvents.playerAnvilPositions.get(playerId);
+        if (anvilPos != null) {
+            BlockEntity be = anvilWorld.getBlockEntity(anvilPos);
             if (be instanceof AbstractSmithingAnvilBlockEntity anvil) {
                 anvil.setProgress(0);
                 anvil.setChanged();
                 anvil.setMinigameOn(false);
                 anvil.clearOwner();
-
-                // Releases ownership, syncs it to all clients and sends this player a ResetMinigameS2CPacket
-                ModItemInteractEvents.releaseAnvil(player, anvilPos);
-                ModItemInteractEvents.playerAnvilPositions.remove(playerId);
-                ModItemInteractEvents.playerMinigameVisibility.remove(playerId);
             }
+            // Clear the server-side session even if the old block no longer exists.
+            ModItemInteractEvents.releaseAnvil(player, anvilPos, anvilWorld);
+            ModItemInteractEvents.playerAnvilPositions.remove(playerId);
+            ModItemInteractEvents.playerMinigameVisibility.remove(playerId);
         }
     }
 

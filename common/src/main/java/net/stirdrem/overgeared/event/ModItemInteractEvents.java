@@ -534,6 +534,10 @@ public class ModItemInteractEvents {
     }
 
     public static void releaseAnvil(ServerPlayer player, BlockPos pos) {
+        releaseAnvil(player, pos, player.level());
+    }
+
+    public static void releaseAnvil(ServerPlayer player, BlockPos pos, Level anvilWorld) {
         UUID playerId = player.getUUID();
         if (playerMinigameVisibility.get(playerId) != null)
             playerMinigameVisibility.remove(playerId);
@@ -542,7 +546,7 @@ public class ModItemInteractEvents {
             playerAnvilPositions.remove(playerId);
 
             // 1. Clear ownership from the block entity (server-side)
-            BlockEntity be = player.level().getBlockEntity(pos);
+            BlockEntity be = anvilWorld.getBlockEntity(pos);
             String quality = "perfect";
             if (be instanceof BaseSmithingAnvilBlockEntity anvilBE) {
                 anvilBE.clearOwner();
