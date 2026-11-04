@@ -12,6 +12,7 @@ import net.stirdrem.overgeared.compat.ModCompat;
 import net.stirdrem.overgeared.components.ModComponents;
 import net.stirdrem.overgeared.entity.ModEntities;
 import net.stirdrem.overgeared.item.ModCreativeModeTabs;
+import net.stirdrem.overgeared.loot.ForgedTradeQualityFunction;
 import net.stirdrem.overgeared.item.ModItems;
 import net.stirdrem.overgeared.item.ToolTypeRegistry;
 import net.stirdrem.overgeared.recipe.ModRecipeSerializers;
@@ -39,6 +40,7 @@ public final class OvergearedMod {
         // Order matters on Fabric, where entries are registered immediately.
         ModSounds.register();
         ModComponents.register();
+        ForgedTradeQualityFunction.register();
         ModBlocks.register();
         ModItems.register();
         ModBlockEntities.register();
