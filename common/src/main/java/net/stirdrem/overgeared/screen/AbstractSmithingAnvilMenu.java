@@ -1,12 +1,10 @@
 package net.stirdrem.overgeared.screen;
 
 import net.minecraft.core.NonNullList;
-import net.minecraft.recipebook.ServerPlaceRecipe;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.player.StackedContents;
+import net.minecraft.world.entity.player.StackedItemContents;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SmithingTemplateItem;
@@ -36,7 +34,7 @@ import java.util.Optional;
 public class AbstractSmithingAnvilMenu extends RecipeBookMenu {
     private final CraftingContainer craftingContainer = new CraftingContainer() {
         @Override
-        public void fillStackedContents(StackedContents contents) {
+        public void fillStackedContents(StackedItemContents contents) {
             for (int i = 0; i < getContainerSize(); i++) {
                 ItemStack stack = getItem(i);
                 if (!stack.isEmpty()) {
@@ -498,7 +496,7 @@ public class AbstractSmithingAnvilMenu extends RecipeBookMenu {
     }
 
     @Override
-    public void fillCraftSlotsStackedContents(StackedContents contents) {
+    public void fillCraftSlotsStackedContents(StackedItemContents contents) {
         for (int i = 0; i < this.craftingContainer.getContainerSize(); ++i) {
             contents.accountSimpleStack(this.craftingContainer.getItem(i));
         }
