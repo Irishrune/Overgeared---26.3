@@ -60,16 +60,17 @@ public class FabricPlatformHelper implements IPlatformHelper {
     @Override
     @SuppressWarnings("unchecked")
     public <R> void register(DeferredRegister<R> register) {
-        Registry<R> registry = (Registry<R>) BuiltInRegistries.REGISTRY.get(register.getRegistryKey().location());
+        Registry<R> registry = (Registry<R>) BuiltInRegistries.REGISTRY.get(register.getRegistryKey().identifier());
         if (registry == null) {
-            throw new IllegalStateException("Unknown registry " + register.getRegistryKey().location());
+            throw new IllegalStateException("Unknown registry " + register.getRegistryKey().identifier());
         }
         register.getEntriesWithFactories().forEach((holder, factory) -> Registry.register(registry, holder.getKey(), factory.get()));
     }
 
     @Override
     public <T extends AbstractContainerMenu> MenuType<T> createMenuType(MenuFactory<T> factory) {
-        // Fabric 26.3 replaces screenhandler.v1 with menu.v1. Keep the legacy\n        // byte-buffer menu contract intact while using the new typed menu API.
+        // Fabric 26.3 replaces screenhandler.v1 with menu.v1. Keep the legacy
+        // byte-buffer menu contract intact while using the new typed menu API.
         return new ExtendedMenuType<>(
                 (int containerId, Inventory inventory, byte[] data) -> factory.create(containerId, inventory,
                         new RegistryFriendlyByteBuf(Unpooled.wrappedBuffer(data), inventory.player.registryAccess())),
@@ -132,7 +133,7 @@ public class FabricPlatformHelper implements IPlatformHelper {
 
     @Override
     public CreativeModeTab.Builder creativeModeTabBuilder() {
-        return CreativeModeTab.builder();
+        return CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0);
     }
 
     @Override
@@ -152,7 +153,7 @@ public class FabricPlatformHelper implements IPlatformHelper {
     @Override
     public MapCodec<Ingredient> ingredientMapCodec() {
         // Vanilla only has a list-or-object codec; the object form can be read as a map.
-        return MapCodec.assumeMapUnsafe(Ingredient.CODEC_NONEMPTY);
+        return MapCodec.assumeMapUnsafe(Ingredient.CODEC);
     }
 
     @Override
