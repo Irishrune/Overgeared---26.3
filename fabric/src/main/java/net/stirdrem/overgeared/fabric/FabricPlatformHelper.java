@@ -25,6 +25,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.stirdrem.overgeared.platform.IPlatformHelper;
 import net.stirdrem.overgeared.registry.DeferredRegister;
@@ -147,7 +148,11 @@ public class FabricPlatformHelper implements IPlatformHelper {
 
     @Override
     public ItemStack getCraftingRemainder(ItemStack stack) {
-        return stack.getRecipeRemainder();
+        if (stack.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+        ItemStackTemplate remainder = stack.getItem().getCraftingRemainder();
+        return remainder == null ? ItemStack.EMPTY : remainder.create();
     }
 
     @Override
