@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.level.storage.loot.LootContext;
 import net.stirdrem.overgeared.registry.DeferredRegister;
 import org.jetbrains.annotations.Nullable;
 
@@ -56,8 +57,11 @@ public interface IPlatformHelper {
     /** A creative tab builder; vanilla's needs a row and column which both loaders fill in themselves. */
     CreativeModeTab.Builder creativeModeTabBuilder();
 
-    /** Furnace burn time of the stack in ticks, 0 if it is not a fuel. */
-    int getBurnTime(ItemStack stack);
+    /** 26.3 cooking fuel burn duration resolved against this workstation's container context. */
+    int getBurnTime(ItemStack stack, LootContext context);
+
+    /** Allows hopper insertion without evaluating a context-sensitive burn duration. */
+    boolean isCookingFuel(ItemStack stack);
 
     /** What is left in the crafting grid after the stack is used, honouring stack-sensitive remainders. */
     ItemStack getCraftingRemainder(ItemStack stack);
