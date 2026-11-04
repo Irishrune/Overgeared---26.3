@@ -6,8 +6,8 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.registry.FuelRegistry;
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
+import net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider;
+import net.fabricmc.fabric.api.menu.v1.ExtendedMenuType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -69,8 +69,8 @@ public class FabricPlatformHelper implements IPlatformHelper {
 
     @Override
     public <T extends AbstractContainerMenu> MenuType<T> createMenuType(MenuFactory<T> factory) {
-        // The extra data is carried as raw bytes, so the menus can read it like on NeoForge.
-        return new ExtendedScreenHandlerType<>(
+        // Fabric 26.3 replaces screenhandler.v1 with menu.v1. Keep the legacy\n        // byte-buffer menu contract intact while using the new typed menu API.
+        return new ExtendedMenuType<>(
                 (int containerId, Inventory inventory, byte[] data) -> factory.create(containerId, inventory,
                         new RegistryFriendlyByteBuf(Unpooled.wrappedBuffer(data), inventory.player.registryAccess())),
                 ByteBufCodecs.BYTE_ARRAY);
@@ -78,7 +78,7 @@ public class FabricPlatformHelper implements IPlatformHelper {
 
     @Override
     public void openMenu(ServerPlayer player, MenuProvider provider, Consumer<RegistryFriendlyByteBuf> extraData) {
-        player.openMenu(new ExtendedScreenHandlerFactory<byte[]>() {
+        player.openMenu(new ExtendedMenuProvider<byte[]>() {
             @Override
             public byte[] getScreenOpeningData(ServerPlayer serverPlayer) {
                 RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), serverPlayer.registryAccess());
