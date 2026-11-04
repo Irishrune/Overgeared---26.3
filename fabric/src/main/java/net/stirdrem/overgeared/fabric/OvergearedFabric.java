@@ -20,8 +20,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
-import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.player.Player;
@@ -81,10 +79,10 @@ public final class OvergearedFabric implements ModInitializer {
 
     private static void registerPackets() {
         for (ModPackets.Packet<?> packet : ModPackets.CLIENTBOUND) {
-            registerType(PayloadTypeRegistry.playS2C(), packet);
+            registerType(PayloadTypeRegistry.clientboundPlay(), packet);
         }
         for (ModPackets.Packet<?> packet : ModPackets.SERVERBOUND) {
-            registerType(PayloadTypeRegistry.playC2S(), packet);
+            registerType(PayloadTypeRegistry.serverboundPlay(), packet);
             registerServerReceiver(packet);
         }
     }
@@ -123,10 +121,14 @@ public final class OvergearedFabric implements ModInitializer {
                 }
 
                 @Override
-                public CompletableFuture<Void> reload(PreparationBarrier barrier, ResourceManager manager,
-                                                      ProfilerFiller preparationsProfiler, ProfilerFiller reloadProfiler,
-                                                      Executor backgroundExecutor, Executor gameExecutor) {
-                    return listener.reload(barrier, manager, preparationsProfiler, reloadProfiler, backgroundExecutor, gameExecutor);
+                public void prepareSharedState(SharedState state) {
+                    listener.prepareSharedState(state);
+                }
+
+                @Override
+                public CompletableFuture<Void> reload(SharedState state, Executor backgroundExecutor,
+                                                      PreparationBarrier barrier, Executor gameExecutor) {
+                    return listener.reload(state, backgroundExecutor, barrier, gameExecutor);
                 }
 
                 @Override
@@ -142,7 +144,7 @@ public final class OvergearedFabric implements ModInitializer {
         List<LootInjections.Injection> injections = LootInjections.all();
         LootTableEvents.MODIFY.register((key, tableBuilder, source, registries) -> {
             for (LootInjections.Injection injection : injections) {
-                if (injection.table().equals(key.location())) {
+                if (injection.table().equals(key.identifier())) {
                     tableBuilder.withPool(LootPool.lootPool()
                             .setRolls(Holder.direct(new ConstantValue(1)))
                             .when(LootItemRandomChanceCondition.randomChance(injection.chance()))
@@ -211,7 +213,7 @@ public final class OvergearedFabric implements ModInitializer {
                     return InteractionResult.FAIL;
                 }
                 ItemStack stack = player.getItemInHand(hand);
-                if (stack.isEmpty() || player.getCooldowns().isOnCooldown(stack.getItem())) {
+                if (stack.isEmpty() || player.getCooldowns().isOnCooldown(stack)) {
                     return InteractionResult.FAIL;
                 }
                 return stack.useOn(new UseOnContext(player, hand, hitResult));
