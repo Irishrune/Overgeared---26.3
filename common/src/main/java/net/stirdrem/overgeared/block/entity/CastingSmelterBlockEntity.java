@@ -254,7 +254,7 @@ public class CastingSmelterBlockEntity extends BaseContainerBlockEntity implemen
         }
 
         // XP
-        if (!level.isClientSide && recipe.getExperience() > 0) {
+        if (!level.isClientSide() && recipe.getExperience() > 0) {
             storedExperience += recipe.getExperience();
         }
     }
@@ -262,7 +262,7 @@ public class CastingSmelterBlockEntity extends BaseContainerBlockEntity implemen
     // ================= XP =================
 
     private void spawnExperience(float xp) {
-        if (level == null || level.isClientSide)
+        if (level == null || level.isClientSide())
             return;
 
         int i = Mth.floor(xp);
@@ -282,7 +282,7 @@ public class CastingSmelterBlockEntity extends BaseContainerBlockEntity implemen
     }
 
     public void awardStoredExperience(Player player) {
-        if (this.level == null || this.level.isClientSide)
+        if (this.level == null || this.level.isClientSide())
             return;
         if (storedExperience > 0 && player != null) {
             int total = (int) storedExperience;

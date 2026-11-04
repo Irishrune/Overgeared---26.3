@@ -560,7 +560,7 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
 
         setChanged();
 
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
 
@@ -997,7 +997,7 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
     // Not the happiest with this due to constantly checking if it's open etc.,
 // maybe figure smth out :)
     public void tickHeatedIngredients(Level level, BlockPos pos, BlockState state) {
-        if (!this.hasHeatedItems || level.isClientSide)
+        if (!this.hasHeatedItems || level.isClientSide())
             return;
         if (level.getGameTime() % 20 != 0)
             return;

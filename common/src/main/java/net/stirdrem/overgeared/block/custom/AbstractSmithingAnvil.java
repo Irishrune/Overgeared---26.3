@@ -286,7 +286,7 @@ public abstract class AbstractSmithingAnvil extends BaseSmithingAnvilBlock imple
 
     @Override
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource pRandom) {
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             BlockPos below = pos.below();
             BlockState stateBelow = level.getBlockState(below);
             if (FallingBlock.isFree(stateBelow)) {

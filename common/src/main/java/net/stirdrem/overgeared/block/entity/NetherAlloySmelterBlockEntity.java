@@ -258,7 +258,7 @@ public class NetherAlloySmelterBlockEntity extends BaseContainerBlockEntity impl
             }
 
             // No room for the remainder -> drop it into the world.
-            if (!remainder.isEmpty() && level != null && !level.isClientSide) {
+            if (!remainder.isEmpty() && level != null && !level.isClientSide()) {
                 Containers.dropItemStack(
                         level,
                         worldPosition.getX() + 0.5,
@@ -269,7 +269,7 @@ public class NetherAlloySmelterBlockEntity extends BaseContainerBlockEntity impl
             }
         }
 
-        if (level != null && !level.isClientSide && xp > 0.0F) {
+        if (level != null && !level.isClientSide() && xp > 0.0F) {
             storedExperience += xp;
         }
     }
@@ -279,7 +279,7 @@ public class NetherAlloySmelterBlockEntity extends BaseContainerBlockEntity impl
     // Experience logic (vanilla accurate)
     // --------------------------------------------------
     private void spawnExperience(float xp) {
-        if (this.level == null || this.level.isClientSide) return;
+        if (this.level == null || this.level.isClientSide()) return;
 
         int i = Mth.floor(xp);
         float f = xp - i;
@@ -337,7 +337,7 @@ public class NetherAlloySmelterBlockEntity extends BaseContainerBlockEntity impl
     }
 
     public void awardStoredExperience(Player player) {
-        if (this.level == null || this.level.isClientSide) return;
+        if (this.level == null || this.level.isClientSide()) return;
         if (storedExperience > 0 && player != null) {
             int total = (int) storedExperience;
             float fractional = storedExperience - total;
