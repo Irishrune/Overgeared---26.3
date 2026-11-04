@@ -8,6 +8,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -93,6 +94,9 @@ public class NetherAlloySmelterBlockEntity extends BaseContainerBlockEntity impl
     // Tick logic
     // --------------------------------------------------
     public static void tick(Level level, BlockPos pos, BlockState state, NetherAlloySmelterBlockEntity be) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return;
+        }
         boolean wasLit = be.burnTime > 0;
         boolean changed = false;
 
@@ -103,12 +107,16 @@ public class NetherAlloySmelterBlockEntity extends BaseContainerBlockEntity impl
         ItemStack fuel = be.itemHandler.getStackInSlot(9);
 
         if (be.burnTime == 0 && be.canSmelt()) {
-            be.maxBurnTime = be.burnTime = Services.PLATFORM.getBurnTime(fuel);
+            be.maxBurnTime = be.burnTime = Services.PLATFORM.getBurnTime(fuel, be.getLootContext(serverLevel));
             if (be.burnTime > 0 && !fuel.isEmpty()) {
-                if (!Services.PLATFORM.getCraftingRemainder(fuel).isEmpty()) {
-                    be.itemHandler.setStackInSlot(9, Services.PLATFORM.getCraftingRemainder(fuel));
-                } else {
-                    fuel.shrink(1);
+                ItemStack remainder = Services.PLATFORM.getCraftingRemainder(fuel);
+                fuel.shrink(1);
+                if (!remainder.isEmpty()) {
+                    if (fuel.isEmpty()) {
+                        be.itemHandler.setStackInSlot(9, remainder);
+                    } else {
+                        Containers.dropItemStack(serverLevel, pos.getX(), pos.getY(), pos.getZ(), remainder);
+                    }
                 }
                 changed = true;
             }
@@ -413,7 +421,7 @@ public class NetherAlloySmelterBlockEntity extends BaseContainerBlockEntity impl
     @Override
     public boolean canPlaceItemThroughFace(int index, ItemStack stack, @Nullable Direction direction) {
         if (index == 10) return false;
-        if (index == 9) return Services.PLATFORM.getBurnTime(stack) > 0;
+        if (index == 9) return Services.PLATFORM.isCookingFuel(stack);
         return true; // All input slots can accept any item
     }
 
