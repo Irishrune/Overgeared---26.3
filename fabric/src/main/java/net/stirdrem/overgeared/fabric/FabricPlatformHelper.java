@@ -5,11 +5,11 @@ import io.netty.buffer.Unpooled;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.fabricmc.fabric.api.registry.FuelRegistry;
 import net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider;
 import net.fabricmc.fabric.api.menu.v1.ExtendedMenuType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.Registry;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -26,6 +26,9 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.world.item.component.CookingFuel;
+import net.minecraft.world.level.storage.loot.LootContext;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.stirdrem.overgeared.platform.IPlatformHelper;
 import net.stirdrem.overgeared.registry.DeferredRegister;
@@ -138,12 +141,18 @@ public class FabricPlatformHelper implements IPlatformHelper {
     }
 
     @Override
-    public int getBurnTime(ItemStack stack) {
-        if (stack.isEmpty()) {
-            return 0;
-        }
-        Integer burnTime = FuelRegistry.INSTANCE.get(stack.getItem());
-        return burnTime == null ? 0 : burnTime;
+    public int getBurnTime(ItemStack stack, LootContext context) {
+        // Match AbstractFurnaceBlockEntity in Minecraft 26.3. Vanilla fuels
+        // can use data-driven context providers rather than a static registry.
+        return ResolvableInt.getFromItem(
+                stack, DataComponents.COOKING_FUEL, CookingFuel::burnTime, context, 0);
+    }
+
+    @Override
+    public boolean isCookingFuel(ItemStack stack) {
+        // Like vanilla's fuel slot, accept items carrying the cooking-fuel component.
+        // Their actual burn time is evaluated only in a server container context.
+        return !stack.isEmpty() && stack.has(DataComponents.COOKING_FUEL);
     }
 
     @Override
