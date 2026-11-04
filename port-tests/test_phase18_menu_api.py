@@ -34,6 +34,8 @@ class ExtendedMenuBridgeTests(unittest.TestCase):
 
     def test_migrated_vanilla_263_signatures(self):
         self.assertIn("register.getRegistryKey().identifier()", SOURCE)
+        self.assertIn("BuiltInRegistries.REGISTRY.getValue(", SOURCE)
+        self.assertNotIn("BuiltInRegistries.REGISTRY.get(", SOURCE)
         self.assertNotIn("register.getRegistryKey().location()", SOURCE)
         self.assertIn("CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)", SOURCE)
         self.assertNotIn("CreativeModeTab.builder()", SOURCE)
