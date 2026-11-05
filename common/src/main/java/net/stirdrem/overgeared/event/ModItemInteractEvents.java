@@ -268,7 +268,7 @@ public class ModItemInteractEvents {
         }
         Optional<RecipeHolder<ForgingRecipe>> recipeOpt = anvilBE.getCurrentRecipeHolder();
 
-        if (level.getGameRules().get(GameRules.LIMITED_CRAFTING)) {
+        if (level instanceof ServerLevel serverLevel && serverLevel.getGameRules().get(GameRules.LIMITED_CRAFTING)) {
             if (recipeOpt.isEmpty() || !serverPlayer.getRecipeBook().contains(recipeOpt.get().id())) {
                 serverPlayer.sendSystemMessage(
                         Component.translatable("message.overgeared.no_recipe")
