@@ -11,6 +11,8 @@ Work remains in [draft PR #1](https://github.com/Irishrune/Overgeared---26.3/pul
 
 ## Port changes
 
+Version `26.3-port.0.1.1` fixes player hammer clicks during the forging timer. The old client path called `hasRecipe()`, but 26.3 only keeps the recipe database on the server, so hits were never sent. Client clicks now use the server-authorized forging session and matching anvil position; the server still validates each strike. The client regression test starts forging with sneak/use input, releases sneak, and clicks three times to check server progress, hammer wear, ingredient consumption, blade output and timer completion. The earlier workstation-screen tests did not exercise this interaction.
+
 The compilation migrations cover client screens and rendering, recipe-book displays/settings, item-break and sweep callbacks, potion/brewing hooks, and ingredient codecs. Recipe and reload-listener resolution now respects 26.3's registry/component binding lifecycle. Anvil previews are synchronized from the server. Quality and custom material component patches transfer to finished parts while keeping the finished item's own defaults. Legacy text colors now include explicit alpha so workstation and configuration labels remain visible.
 
 The original quantities, blueprint rules, quality mechanics, quenching, polishing, casting mold reuse, vanilla shortcut restrictions, and registry identifiers are retained. Mixed-material casting is covered; a new modular mixed-material equipment system remains future work after the core port is playable.

@@ -2,6 +2,7 @@ package net.stirdrem.overgeared.test;
 
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
+import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
@@ -14,6 +15,9 @@ import net.stirdrem.overgeared.block.ModBlocks;
 import net.stirdrem.overgeared.block.entity.AbstractSmithingAnvilBlockEntity;
 import net.stirdrem.overgeared.item.ModItems;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.level.GameType;
+import net.stirdrem.overgeared.event.AnvilMinigameEvents;
 import net.stirdrem.overgeared.screen.*;
 
 /** Exercises actual server-to-client menu opening and the 26.3 rendering pipeline. */
@@ -81,7 +85,70 @@ public class PortClientGameTests implements FabricClientGameTest {
                 world.getConnection().waitForServerboundPackets();
                 System.out.println("Overgeared client test: passed " + station.screenshot());
             }
+            forgeCopperBlade(context, world);
         }
+    }
+
+    /** Exercise player input, session packets and server crafting together. */
+    private void forgeCopperBlade(ClientGameTestContext context, TestSingleplayerContext world) {
+        System.out.println("Overgeared client test: forging copper blade with hammer clicks");
+        var pos = world.getServer().computeOnServer(server -> world.getConnection().getServerPlayer().blockPosition().offset(2, 0, 0));
+        world.getServer().runOnServer(server -> {
+            var player = world.getConnection().getServerPlayer();
+            player.setGameMode(GameType.SURVIVAL);
+            player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.COPPER_SMITHING_HAMMER.get()));
+            player.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+            var level = player.level();
+            level.setBlockAndUpdate(pos.below(), Blocks.STONE.defaultBlockState());
+            level.setBlockAndUpdate(pos, ModBlocks.STONE_SMITHING_ANVIL.get().defaultBlockState());
+            var anvil = (AbstractSmithingAnvilBlockEntity) level.getBlockEntity(pos);
+            anvil.getItemHandler().setStackInSlot(0, new ItemStack(ModItems.HEATED_COPPER_INGOT.get()));
+            anvil.getItemHandler().setStackInSlot(3, new ItemStack(ModItems.HEATED_COPPER_INGOT.get()));
+            if (!anvil.hasRecipe() || anvil.getRequiredProgress() != 3) {
+                throw new AssertionError("Copper blade must be a valid three-hit recipe");
+            }
+            player.containerMenu.broadcastChanges();
+        });
+        context.waitFor(client -> client.player.getMainHandItem().is(ModItems.COPPER_SMITHING_HAMMER.get())
+                && client.level.getBlockState(pos).is(ModBlocks.STONE_SMITHING_ANVIL.get())
+                && client.level.getBlockEntity(pos) instanceof AbstractSmithingAnvilBlockEntity);
+        context.getInput().holdKey(options -> options.keyShift);
+        context.waitFor(client -> client.player.isCrouching());
+        world.getConnection().waitForServerboundPackets();
+        context.getInput().lookAt(pos);
+        context.getInput().pressKey(options -> options.keyUse);
+        context.getInput().releaseKey(options -> options.keyShift);
+        context.waitFor(client -> AnvilMinigameEvents.isVisible() && !client.player.isCrouching());
+        if (context.computeOnClient(client -> ((AbstractSmithingAnvilBlockEntity) client.level.getBlockEntity(pos)).hasRecipe())) {
+            throw new AssertionError("Regression must run without a client-side recipe database");
+        }
+        context.takeScreenshot("copper-blade-forging-timer");
+        for (int hit = 1; hit <= 3; hit++) {
+            int expectedHits = hit;
+            context.getInput().lookAt(pos);
+            context.waitTicks(5);
+            context.getInput().pressKey(options -> options.keyUse);
+            world.getConnection().waitForServerboundPackets();
+            world.getServer().waitFor(server -> {
+                var player = world.getConnection().getServerPlayer();
+                var anvil = (AbstractSmithingAnvilBlockEntity) player.level().getBlockEntity(pos);
+                return player.getMainHandItem().getDamageValue() == expectedHits
+                        && (expectedHits < 3 ? anvil.getProgress() == expectedHits
+                            : anvil.getItemHandler().getStackInSlot(10).is(ModItems.COPPER_SWORD_BLADE.get()));
+            });
+            System.out.println("Overgeared client test: copper blade hammer hit " + hit + " registered on server");
+        }
+        context.waitFor(client -> !AnvilMinigameEvents.isVisible());
+        world.getServer().runOnServer(server -> {
+            var player = world.getConnection().getServerPlayer();
+            var anvil = (AbstractSmithingAnvilBlockEntity) player.level().getBlockEntity(pos);
+            if (!anvil.getItemHandler().getStackInSlot(0).isEmpty()
+                    || !anvil.getItemHandler().getStackInSlot(3).isEmpty()
+                    || anvil.getItemHandler().getStackInSlot(10).getCount() != 1) {
+                throw new AssertionError("Three hammer clicks must consume two ingots and produce exactly one blade");
+            }
+        });
+        System.out.println("Overgeared client test: passed copper blade forging through player input");
     }
 }
 

@@ -138,32 +138,20 @@ public abstract class AbstractSmithingAnvil extends BaseSmithingAnvilBlock imple
                 return InteractionResult.SUCCESS; // Let server handle opening menu
             }
 
-            if (anvil.hasRecipe() && isHammer) {
-                // Check if this is our anvil
-
-                BlockPos ourAnvilPos = AnvilMinigameEvents.getAnvilPos(player.getUUID());
-                if (ourAnvilPos != null && !pos.equals(ourAnvilPos)) {
-                    // Not our anvil - don't process hit
-                    return InteractionResult.SUCCESS;
-                }
-                // Check if minigame is visible (quality recipe with minigame enabled)
-                if (AnvilMinigameEvents.isVisible()) {
-                    // Process the hit client-side to update minigame state
-                    AnvilMinigameEvents.resetPopUps();
-                    String hitQuality = AnvilMinigameEvents.handleHit();
-                    // Send the quality result to server
-                    PacketDistributor.sendToServer(new PacketSendCounterC2SPacket(hitQuality, pos,
-                            ModSounds.ANVIL_HIT.getId(), ModSounds.FORGING_COMPLETE.getId(), ModSounds.FORGING_FAILED.getId()));
-                    // Intentional second speed-up: handleHit() already applies one. The minigame's
-                    // difficulty is tuned around 2x the configured arrowSpeedIncrease per hit.
-                    AnvilMinigameEvents.speedUp();
-                    return InteractionResult.SUCCESS;
-                } else if (!anvil.hasQuality() && !anvil.needsMinigame()) {
-                    return InteractionResult.SUCCESS;
-                } else if (!ServerConfig.ENABLE_MINIGAME.get()) {
-                    // Minigame disabled - allow direct hammering
-                    return InteractionResult.SUCCESS;
-                }
+            // 26.3 clients have recipe displays, not the server recipe database.
+            // The server-authorized session is the client hit gate; hasRecipe()
+            // always returns false here. The hit packet still validates ownership,
+            // range, hammer and current recipe on the server.
+            if (isHammer && AnvilMinigameEvents.minigameStarted
+                    && AnvilMinigameEvents.isVisible()
+                    && pos.equals(AnvilMinigameEvents.getAnvilPos(player.getUUID()))) {
+                AnvilMinigameEvents.resetPopUps();
+                String hitQuality = AnvilMinigameEvents.handleHit();
+                PacketDistributor.sendToServer(new PacketSendCounterC2SPacket(hitQuality, pos,
+                        ModSounds.ANVIL_HIT.getId(), ModSounds.FORGING_COMPLETE.getId(), ModSounds.FORGING_FAILED.getId()));
+                // Intentional second speed-up: handleHit() already applies one. The minigame's
+                // difficulty is tuned around 2x the configured arrowSpeedIncrease per hit.
+                AnvilMinigameEvents.speedUp();
             }
             return InteractionResult.SUCCESS;
         }
