@@ -7,7 +7,7 @@ import net.minecraft.world.entity.Entity;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
