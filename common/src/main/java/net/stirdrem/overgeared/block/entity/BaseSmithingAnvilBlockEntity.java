@@ -137,6 +137,19 @@ public abstract class BaseSmithingAnvilBlockEntity
     }
 
 
+    /**
+     * In Minecraft 26.3, this callback runs while the anvil entity still
+     * exists. Unlike a vanilla Container block entity, this item-handler-
+     * backed entity does not drop inventory automatically.
+     */
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        if (level != null && !level.isClientSide()) {
+            drops();
+        }
+        super.preRemoveSideEffects(pos, state);
+    }
+
     public void drops() {
 
         SimpleContainer container =
