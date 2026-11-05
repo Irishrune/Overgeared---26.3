@@ -37,16 +37,23 @@ public class PortClientGameTests implements FabricClientGameTest {
             };
             for (Station station : stations) {
                 System.out.println("Overgeared client test: opening " + station.screenshot());
+                var pos = world.getServer().computeOnServer(server -> world.getConnection().getServerPlayer().blockPosition().offset(2, 0, 0));
                 world.getServer().runOnServer(server -> {
                     var player = world.getConnection().getServerPlayer();
                     var level = player.level();
-                    var pos = player.blockPosition().offset(2, 0, 0);
                     level.setBlockAndUpdate(pos.below(), Blocks.STONE.defaultBlockState());
                     level.setBlockAndUpdate(pos, station.block().defaultBlockState());
                     if (level.getBlockEntity(pos) instanceof AbstractSmithingAnvilBlockEntity anvil) {
                         for (int i = 0; i < 3; i++) anvil.getItemHandler().setStackInSlot(i, new ItemStack(ModItems.HEATED_IRON_INGOT.get()));
                         anvil.getItemHandler().setStackInSlot(9, new ItemStack(ModItems.COPPER_SMITHING_HAMMER.get()));
                     }
+                });
+                // A real player can only interact after the placed workstation is visible.
+                context.waitFor(client -> client.level.getBlockState(pos).is(station.block())
+                        && client.level.getBlockEntity(pos) != null);
+                world.getServer().runOnServer(server -> {
+                    var player = world.getConnection().getServerPlayer();
+                    var level = player.level();
                     level.getBlockState(pos).useWithoutItem(level, player,
                             new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false));
                 });
