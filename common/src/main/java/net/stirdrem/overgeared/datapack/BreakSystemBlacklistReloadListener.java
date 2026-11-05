@@ -8,7 +8,6 @@ import com.google.gson.JsonSyntaxException;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -16,7 +15,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class BreakSystemBlacklistReloadListener extends SimpleJsonResourceReloadListener {
+public class BreakSystemBlacklistReloadListener extends LegacyJsonResourceReloadListener {
 
     private static final Map<Identifier, Ingredient> DATA = new ConcurrentHashMap<>();
     public static final BreakSystemBlacklistReloadListener INSTANCE = new BreakSystemBlacklistReloadListener();
