@@ -57,7 +57,10 @@ class RecipePhase8Tests(unittest.TestCase):
         display=(JAVA/'util/IngredientDisplay.java').read_text()
         self.assertIn('ingredient.items()',display)
         self.assertIn('new ItemStack(holder.value())',display)
-        self.assertIn('manager == null ? List.of()',lookups)
+        self.assertIn('if (manager == null)',lookups)
+        self.assertIn('return List.of();',lookups)
+        self.assertIn('manager.getRecipes().stream()',lookups)
+        self.assertIn('holder.value().getType() == type',lookups)
         for n in ('util/ConfigHelper.java','util/ItemUtils.java','event/ModItemInteractEvents.java'):
             with self.subTest(file=n):
                 self.assertIn('RecipeLookups.all(level,', (JAVA/n).read_text())
@@ -89,13 +92,11 @@ class RecipePhase8Tests(unittest.TestCase):
                 srcs.append(path)
             c='net.minecraft.world.item.crafting'
             add(c,'RecipeInput','public interface RecipeInput {}')
-            add(c,'Recipe','public interface Recipe<I extends RecipeInput> {}')
+            add(c,'Recipe','public interface Recipe<I extends RecipeInput> { RecipeType<?> getType(); }')
             add(c,'RecipeType','public interface RecipeType<T extends Recipe<?>> {}')
             add(c,'RecipeHolder','public record RecipeHolder<T extends Recipe<?>>(T value) {}')
-            add(c,'RecipeMap','''import java.util.*;
-                public interface RecipeMap { <I extends RecipeInput, T extends Recipe<I>>
-                Collection<RecipeHolder<T>> byType(RecipeType<T> type); }''')
-            add(c,'RecipeManager','public interface RecipeManager { RecipeMap recipeMap(); }')
+            add(c,'RecipeManager','''import java.util.*;
+                public interface RecipeManager { Collection<RecipeHolder<?>> getRecipes(); }''')
             add('net.minecraft.world.level','Level','public class Level {}')
             add('net.minecraft.server.level','ServerLevel','''import net.minecraft.world.level.Level;
                import net.minecraft.world.item.crafting.RecipeManager;
@@ -111,16 +112,15 @@ class RecipePhase8Tests(unittest.TestCase):
                 import java.util.*;
                 public class RecipeLookupsSmoke {
                     static class Input implements RecipeInput {}
-                    static class Dummy implements Recipe<Input> {}
+                    static class Dummy implements Recipe<Input> {
+                        private final RecipeType<?> type;
+                        Dummy(RecipeType<?> type){ this.type=type; }
+                        @Override public RecipeType<?> getType() { return type; }
+                    }
                     public static void main(String[] args) {
                         RecipeType<Dummy> type = new RecipeType<>() {};
-                        RecipeHolder<Dummy> holder = new RecipeHolder<>(new Dummy());
-                        RecipeManager manager = () -> new RecipeMap() {
-                            @Override public <I extends RecipeInput,T extends Recipe<I>>
-                              Collection<RecipeHolder<T>> byType(RecipeType<T> t) {
-                                return t == type ? (Collection) List.of(holder) : List.of();
-                              }
-                        };
+                        RecipeHolder<Dummy> holder = new RecipeHolder<>(new Dummy(type));
+                        RecipeManager manager = () -> List.<RecipeHolder<?>>of(holder);
                         Level client = new Level();
                         Level server = new ServerLevel(manager);
                         if (RecipeLookups.managerOrNull(client) != null) throw new AssertionError();
