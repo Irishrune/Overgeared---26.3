@@ -33,6 +33,7 @@ public class QualityAttributeReloadListener
     }
 
     private static final Set<Item> cachedItems = new HashSet<>();
+    private static boolean cacheReady;
 
     @Override
     protected void apply(Map<Identifier, JsonElement> jsons,
@@ -41,14 +42,15 @@ public class QualityAttributeReloadListener
 
         definitions.clear();
         cachedItems.clear();
+        cacheReady = false;
 
         for (JsonElement element : jsons.values()) {
             QualityAttributeDefinition def = parse(element.getAsJsonObject());
             definitions.add(def);
         }
 
-        // build cache
-        cachedItems.addAll(resolveItems());
+        // Item components and tags are bound after resource reload completes.
+        // Resolve the affected-item cache on first gameplay use instead.
 
         OvergearedMod.LOGGER.info("Loaded {} quality attribute files", jsons.size());
     }
@@ -171,7 +173,11 @@ public class QualityAttributeReloadListener
         return items;
     }
 
-    public Set<Item> getAllItems() {
+    public synchronized Set<Item> getAllItems() {
+        if (!cacheReady) {
+            cachedItems.addAll(resolveItems());
+            cacheReady = true;
+        }
         return cachedItems;
     }
 }

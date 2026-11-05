@@ -3,6 +3,8 @@ package net.stirdrem.overgeared.datapack;
 import com.google.gson.*;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.TagKey;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.GsonHelper;
@@ -28,16 +30,23 @@ public class RockInteractionReloadListener extends LegacyJsonResourceReloadListe
     private static final Gson GSON = new Gson();
 
     private static final Map<Identifier, RockInteractionData> DATA = new ConcurrentHashMap<>();
+    private Map<Identifier, JsonElement> pending = Map.of();
+    private boolean resolved;
 
     public RockInteractionReloadListener() {
         super(GSON, "rock_interactions");
     }
 
     @Override
-    protected void apply(Map<Identifier, JsonElement> jsons, ResourceManager manager, ProfilerFiller profiler) {
+    protected synchronized void apply(Map<Identifier, JsonElement> jsons, ResourceManager manager, ProfilerFiller profiler) {
+        // Item stacks and tag ingredients require the completed 26.3 registry.
+        pending = Map.copyOf(jsons);
+        resolved = false;
         DATA.clear();
+    }
 
-        for (Map.Entry<Identifier, JsonElement> entry : jsons.entrySet()) {
+    private void resolve() {
+        for (Map.Entry<Identifier, JsonElement> entry : pending.entrySet()) {
             Identifier id = entry.getKey();
             JsonElement value = entry.getValue();
 
@@ -127,7 +136,11 @@ public class RockInteractionReloadListener extends LegacyJsonResourceReloadListe
         DATA.put(id, data);
     }
 
-    public Collection<RockInteractionData> getAll() {
+    public synchronized Collection<RockInteractionData> getAll() {
+        if (!resolved) {
+            resolve();
+            resolved = true;
+        }
         return DATA.values();
     }
 
@@ -136,9 +149,15 @@ public class RockInteractionReloadListener extends LegacyJsonResourceReloadListe
     }
 
     private Ingredient parseIngredient(JsonObject json) {
-        return Ingredient.CODEC
-                .parse(JsonOps.INSTANCE, json) // pass full object
-                .getOrThrow(JsonSyntaxException::new);
+        if (json.has("tag")) {
+            var tag = TagKey.create(Registries.ITEM, Identifier.parse(GsonHelper.getAsString(json, "tag")));
+            return Ingredient.of(BuiltInRegistries.ITEM.get(tag)
+                    .orElseThrow(() -> new JsonSyntaxException("Unknown item tag " + tag)));
+        }
+        var id = Identifier.parse(GsonHelper.getAsString(json, "item"));
+        Item item = BuiltInRegistries.ITEM.getValue(id);
+        if (item == Items.AIR) throw new JsonSyntaxException("Unknown tool item " + id);
+        return Ingredient.of(item);
     }
 
     private void addDefaultInteraction() {

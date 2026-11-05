@@ -26,7 +26,8 @@ class QualityAndResource26_3Tests(unittest.TestCase):
         self.assertIn("BuiltInRegistries.ITEM.getValue(dropId)",R)
         self.assertIn("new RockInteractionData.ToolEntry",R)
         self.assertIn("new ItemStack(ModItems.ROCK.get())",R)
-        self.assertIn("Ingredient.CODEC",R)
+        self.assertIn("Ingredient.of(BuiltInRegistries.ITEM.get(tag)",R)
+        self.assertIn("pending = Map.copyOf(jsons)",R)
 
     def test_quality_reload_filters_item_types_by_components(self):
         self.assertIn("BuiltInRegistries.ITEM.getValue(target.id())",Q)

@@ -33,7 +33,7 @@ class DatapackReload26_3Tests(unittest.TestCase):
             with self.subTest(listener=name):
                 s=(DIR/f"{name}.java").read_text(encoding="utf-8")
                 self.assertIn("extends LegacyJsonResourceReloadListener",s)
-                self.assertIn("protected void apply(",s)
+                self.assertRegex(s, r"protected\s+(?:synchronized\s+)?void apply\(")
                 self.assertIn("Map<Identifier, JsonElement>",s)
                 self.assertNotIn("extends SimpleJsonResourceReloadListener",s)
                 self.assertNotIn("import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;",s)

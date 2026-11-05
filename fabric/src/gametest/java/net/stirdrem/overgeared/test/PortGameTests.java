@@ -25,6 +25,9 @@ import java.util.*;
 import com.google.gson.JsonParser;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.alchemy.Potions;
+import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
 
 public class PortGameTests {
     private static void check(boolean condition, String message) {
@@ -50,6 +53,11 @@ public class PortGameTests {
         check(RecipeLookups.all(test.getLevel(), ModRecipeTypes.FORGING.get()).size() >= 40, "Missing generated forging recipes");
         check(RecipeLookups.all(test.getLevel(), ModRecipeTypes.CASTING.get()).size() >= 20, "Missing generated casting recipes");
         check(RecipeLookups.all(test.getLevel(), ModRecipeTypes.FLETCHING.get()).size() >= 5, "Missing generated fletching recipes");
+        check(net.stirdrem.overgeared.datapack.QualityAttributeReloadListener.INSTANCE.getAllItems().contains(Items.IRON_PICKAXE),
+                "Quality attributes do not recognize tools after reload");
+        check(net.stirdrem.overgeared.datapack.RockInteractionReloadListener.INSTANCE.getAll().stream()
+                        .anyMatch(interaction -> interaction.matches(Blocks.STONE.defaultBlockState(), new ItemStack(Items.FLINT))),
+                "Flint-on-stone interaction missing after reload");
         test.succeed();
     }
 
@@ -134,6 +142,29 @@ public class PortGameTests {
             check(!((DisabledRecipe)disabled).matches(CraftingInput.of(1, 1, List.of(new ItemStack(Items.BARRIER))), test.getLevel()),
                     "Disabled recipe has a crafting match");
         }
+        test.succeed();
+    }
+
+    @GameTest public void brewingKeepsEachBottlesTippingUses(GameTestHelper test) {
+        BlockPos pos = new BlockPos(1, 2, 1);
+        test.setBlock(pos.below(), Blocks.STONE);
+        test.setBlock(pos, Blocks.BREWING_STAND);
+        var stand = test.getBlockEntity(pos, BrewingStandBlockEntity.class);
+        var thick = new ItemStack(Items.POTION);
+        thick.set(DataComponents.POTION_CONTENTS, new PotionContents(Potions.THICK));
+        thick.set(ModComponents.TIPPED_USES.get(), 3);
+        var water = new ItemStack(Items.POTION);
+        water.set(DataComponents.POTION_CONTENTS, new PotionContents(Potions.WATER));
+        water.set(ModComponents.TIPPED_USES.get(), 1);
+        stand.setItem(0, thick);
+        stand.setItem(1, water);
+        stand.setItem(3, new ItemStack(Items.CHORUS_FRUIT));
+        stand.setItem(4, new ItemStack(Items.BLAZE_POWDER));
+        for (int i = 0; i < 402; i++) BrewingStandBlockEntity.serverTick(test.getLevel(), stand.getBlockPos(), stand.getBlockState(), stand);
+        check(stand.getItem(0).is(Items.DRAGON_BREATH), "Dragon breath brewing recipe did not run");
+        check(stand.getItem(0).getOrDefault(ModComponents.TIPPED_USES.get(), 0) == 3, "Brewing reset tipping uses");
+        check(stand.getItem(1).is(Items.POTION) && stand.getItem(1).getOrDefault(ModComponents.TIPPED_USES.get(), 0) == 1,
+                "Brewing changed the unrelated bottle");
         test.succeed();
     }
 
