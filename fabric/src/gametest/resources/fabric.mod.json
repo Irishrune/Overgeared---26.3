@@ -6,7 +6,8 @@
   "entrypoints": {
     "fabric-gametest": [
       "net.stirdrem.overgeared.test.PortGameTests",
-      "net.stirdrem.overgeared.test.OptionalSmithingGameTests"
+      "net.stirdrem.overgeared.test.OptionalSmithingGameTests",
+      "net.stirdrem.overgeared.test.TreatmentGameTests"
     ],
     "fabric-client-gametest": [
       "net.stirdrem.overgeared.test.PortClientGameTests"

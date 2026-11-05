@@ -30,6 +30,22 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
     public final int width;
     public final int height;
     private final String group;
+    private String treatment = "";
+    public String treatment() { return treatment; }
+    public boolean isTreatment() { return !treatment.isEmpty(); }
+    public ForgingRecipe withTreatment(String value) {
+        if (!value.isEmpty() && !net.stirdrem.overgeared.util.SmithingTreatments.TRAITS.contains(value))
+            throw new IllegalArgumentException("Unknown smithing treatment: " + value);
+        treatment = value;
+        return this;
+    }
+    public ItemStack treatmentInput(RecipeInput input) {
+        for (int i = 0; i < Math.min(9, input.size()); i++)
+            if (net.stirdrem.overgeared.util.SmithingTreatments.canTreat(input.getItem(i), treatment))
+                return input.getItem(i);
+        return ItemStack.EMPTY;
+    }
+
     private final Set<String> blueprintTypes;
     private final String tier;
     private final List<String> pattern;
@@ -127,7 +143,7 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
 
     @Override
     public boolean matches(RecipeInput recipeInput, Level world) {
-        return findMatchOrigin(recipeInput) >= 0;
+        return findMatchOrigin(recipeInput) >= 0 && (!isTreatment() || !treatmentInput(recipeInput).isEmpty());
     }
 
     /**
@@ -194,6 +210,8 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
 
     @Override
     public ItemStack assemble(RecipeInput recipeInput) {
+        if (isTreatment()) return net.stirdrem.overgeared.util.SmithingTreatments.apply(treatmentInput(recipeInput),
+                new net.stirdrem.overgeared.components.TreatmentData(treatment, false));
         ItemStack output = result.create();
         int origin = findMatchOrigin(recipeInput);
         // Preserve the old preview behavior for nonmatching inputs, but do not
@@ -483,7 +501,7 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
                         buf -> ForgingBookCategory.findByName(buf.readUtf())
                 );
 
-        public static final MapCodec<ForgingRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+        private static final MapCodec<ForgingRecipe> BASE_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                     Codec.BOOL.optionalFieldOf("requires_blueprint", false).forGetter(ForgingRecipe::requiresBlueprint),
                     BLUEPRINT_TYPES_CODEC.optionalFieldOf("blueprint", Set.of()).forGetter(ForgingRecipe::getBlueprintTypes),
                     Codec.STRING.optionalFieldOf("tier", AnvilTier.IRON.getDisplayName()).forGetter(ForgingRecipe::getAnvilTier),
@@ -538,6 +556,11 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
             }));
 
 
+        public static final MapCodec<ForgingRecipe> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
+                BASE_CODEC.forGetter((ForgingRecipe r) -> r),
+                Codec.STRING.optionalFieldOf("treatment", "").forGetter(ForgingRecipe::treatment)
+        ).apply(i, ForgingRecipe::withTreatment));
+
         public static final StreamCodec<RegistryFriendlyByteBuf, ForgingRecipe> STREAM_CODEC = new StreamCodec<>() {
                 @Override
                 public ForgingRecipe decode(RegistryFriendlyByteBuf buffer) {
@@ -564,7 +587,7 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
                     return new ForgingRecipe(group, requiresBlueprint, blueprintTypes, tier,
                             List.of(), Map.of(), ingredients,
                             result, failedResult, hammering, hasQuality, needsMinigame, hasPolishing,
-                            needQuenching, showNotification, minimumQuality, qualityDifficulty, width, height, tab);
+                            needQuenching, showNotification, minimumQuality, qualityDifficulty, width, height, tab).withTreatment(buffer.readUtf());
                 }
 
                 @Override
@@ -588,6 +611,7 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
                     buffer.writeBoolean(recipe.failedResult.isPresent());
                     recipe.failedResult.ifPresent(template -> ItemStackTemplate.STREAM_CODEC.encode(buffer, template));
                     TAB_STREAM_CODEC.encode(buffer, recipe.tab);
+                    buffer.writeUtf(recipe.treatment);
                 }
             };
 

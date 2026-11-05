@@ -16,6 +16,10 @@ public class ToolTypeRegistry {
     BY_ID.clear();
     HIDDEN_TYPES.clear();
 
+    // Built-in armor choices must also exist on a remote client before server data reloads.
+    for (String id : List.of("helmet", "chestplate", "leggings", "boots"))
+      BY_ID.put(id, new ToolType(id));
+
     BlueprintTooltypesReloadListener.DATA.values().forEach(data -> {
       for (String id : data.getToolTypes()) {
         BY_ID.computeIfAbsent(id.toLowerCase(Locale.ROOT), ToolType::new);

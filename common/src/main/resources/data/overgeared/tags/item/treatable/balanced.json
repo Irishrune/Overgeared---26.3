@@ -1,0 +1,25 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:stone_sword",
+    "overgeared:stone_sword_blade",
+    "minecraft:stone_axe",
+    "overgeared:stone_axe_head",
+    "overgeared:copper_sword",
+    "overgeared:copper_sword_blade",
+    "overgeared:copper_axe",
+    "overgeared:copper_axe_head",
+    "minecraft:iron_sword",
+    "overgeared:iron_sword_blade",
+    "minecraft:iron_axe",
+    "overgeared:iron_axe_head",
+    "minecraft:golden_sword",
+    "overgeared:golden_sword_blade",
+    "minecraft:golden_axe",
+    "overgeared:golden_axe_head",
+    "overgeared:steel_sword",
+    "overgeared:steel_sword_blade",
+    "overgeared:steel_axe",
+    "overgeared:steel_axe_head"
+  ]
+}

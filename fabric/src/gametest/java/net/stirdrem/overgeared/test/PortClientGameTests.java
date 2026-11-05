@@ -87,6 +87,7 @@ public class PortClientGameTests implements FabricClientGameTest {
             }
             forgeCopperBlade(context, world);
             checkQualityTooltips(context);
+            checkTreatmentInputs(context, world);
         }
     }
 
@@ -173,6 +174,60 @@ public class PortClientGameTests implements FabricClientGameTest {
             });
         }
         System.out.println("Overgeared client test: passed direct copper plate hammering on stone");
+    }
+
+    private void checkTreatmentInputs(ClientGameTestContext context, TestSingleplayerContext world) {
+        var pos = world.getServer().computeOnServer(server -> world.getConnection().getServerPlayer().blockPosition().offset(2, 0, 0));
+        for (String sequence : java.util.List.of("PPPP", "PGPP", "PPPM")) {
+            world.getServer().runOnServer(server -> {
+                var player = world.getConnection().getServerPlayer();
+                var level = player.level();
+                level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+                level.setBlockAndUpdate(pos.below(), Blocks.STONE.defaultBlockState());
+                level.setBlockAndUpdate(pos, ModBlocks.SMITHING_ANVIL.get().defaultBlockState());
+                player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.COPPER_SMITHING_HAMMER.get()));
+                var anvil = (AbstractSmithingAnvilBlockEntity) level.getBlockEntity(pos);
+                anvil.getItemHandler().setStackInSlot(0, new ItemStack(net.minecraft.world.item.Items.STONE_SWORD));
+                anvil.getItemHandler().setStackInSlot(1, new ItemStack(net.minecraft.world.item.Items.COPPER_INGOT));
+                if (!anvil.hasRecipe()) throw new AssertionError("Missing treatment recipe");
+                player.containerMenu.broadcastChanges();
+            });
+            context.waitFor(client -> client.level.getBlockState(pos).is(ModBlocks.SMITHING_ANVIL.get()));
+            context.waitTicks(5);
+            context.getInput().holdKey(options -> options.keyShift);
+            context.waitFor(client -> client.player.isCrouching());
+            world.getConnection().waitForServerboundPackets();
+            context.getInput().lookAt(pos);
+            context.getInput().pressKey(options -> options.keyUse);
+            context.getInput().releaseKey(options -> options.keyShift);
+            context.waitFor(client -> AnvilMinigameEvents.isVisible() && !client.player.isCrouching());
+            for (int i = 0; i < 4; i++) {
+                char hit = sequence.charAt(i); int expected = i + 1;
+                context.waitTicks(5);
+                // Deterministic positions exercise classification and actual use-input/network handling.
+                context.runOnClient(client -> {
+                    AnvilMinigameEvents.arrowSpeed = 0;
+                    AnvilMinigameEvents.speedIncreasePerHit = 0;
+                    AnvilMinigameEvents.perfectZoneStart = 45; AnvilMinigameEvents.perfectZoneEnd = 55;
+                    AnvilMinigameEvents.goodZoneStart = 30; AnvilMinigameEvents.goodZoneEnd = 70;
+                    AnvilMinigameEvents.arrowPosition = hit == 'P' ? 50 : hit == 'G' ? 35 : 90;
+                });
+                context.getInput().lookAt(pos);
+                context.getInput().pressKey(options -> options.keyUse);
+                world.getConnection().waitForServerboundPackets();
+                world.getServer().waitFor(server -> world.getConnection().getServerPlayer().getMainHandItem().getDamageValue() == expected);
+            }
+            context.waitFor(client -> !AnvilMinigameEvents.isVisible());
+            world.getServer().runOnServer(server -> {
+                var a = (AbstractSmithingAnvilBlockEntity)world.getConnection().getServerPlayer().level().getBlockEntity(pos);
+                ItemStack result = a.getItemHandler().getStackInSlot(10);
+                var trait = result.get(net.stirdrem.overgeared.components.ModComponents.TREATMENT.get());
+                if (!result.is(net.minecraft.world.item.Items.STONE_SWORD) || !a.getItemHandler().getStackInSlot(1).isEmpty()
+                        || (sequence.contains("M") ? trait != null : trait == null || trait.flawless() != sequence.equals("PPPP")))
+                    throw new AssertionError("Incorrect real-input treatment outcome: " + sequence);
+            });
+            System.out.println("Overgeared client test: passed treatment input sequence " + sequence);
+        }
     }
 
     private void checkQualityTooltips(ClientGameTestContext context) {

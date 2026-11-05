@@ -300,6 +300,14 @@ public class ModItemInteractEvents {
 
             anvilBE.setPlayer(player);
             anvilBE.setMinigameOn(true);
+            if (anvilBE.getCurrentRecipe().map(ForgingRecipe::isTreatment).orElse(false)) {
+                serverPlayer.sendSystemMessage(Component.translatable("message.overgeared.treatment_rules"), false);
+            } else if (anvilBE.hasQuality()) {
+                String cap = "well";
+                var blueprint = anvilBE.getItemHandler().getStackInSlot(11).get(ModComponents.BLUEPRINT_DATA.get());
+                if (!(anvilBE instanceof net.stirdrem.overgeared.block.entity.StoneSmithingAnvilBlockEntity) && blueprint != null) cap = blueprint.quality().toLowerCase(java.util.Locale.ROOT);
+                serverPlayer.sendSystemMessage(Component.translatable("message.overgeared.quality_cap", Component.translatable("quality.overgeared." + cap)), true);
+            }
 
         } else if (currentOwner.equals(playerUUID)) {
             if (!player.isCrouching()) {

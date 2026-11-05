@@ -1,0 +1,30 @@
+{
+  "type": "overgeared:forging",
+  "category": "misc",
+  "treatment": "sturdy",
+  "pattern": [
+    "EM",
+    " M",
+    " M"
+  ],
+  "key": {
+    "E": {
+      "ingredient": "overgeared:copper_shovel_head",
+      "transfer_nbt": true
+    },
+    "M": {
+      "ingredient": "minecraft:iron_nugget"
+    }
+  },
+  "result": {
+    "id": "overgeared:copper_shovel_head",
+    "count": 1
+  },
+  "hammering": 4,
+  "tier": "iron",
+  "has_quality": false,
+  "needs_minigame": true,
+  "has_polishing": false,
+  "need_quenching": false,
+  "quality_difficulty": "expert"
+}

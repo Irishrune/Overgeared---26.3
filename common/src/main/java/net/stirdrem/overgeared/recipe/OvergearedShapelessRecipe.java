@@ -100,6 +100,12 @@ public class OvergearedShapelessRecipe extends NormalCraftingRecipe {
     @Override
     public ItemStack assemble(CraftingInput input) {
         ItemStack result = this.result.create();
+        for (int i = 0; i < input.size(); i++) {
+            ItemStack part = input.getItem(i);
+            var treatment = part.get(ModComponents.TREATMENT.get());
+            if (treatment != null && net.stirdrem.overgeared.util.SmithingTreatments.isHead(part))
+                result.set(ModComponents.TREATMENT.get(), treatment);
+        }
 
         if (!ServerConfig.ENABLE_MINIGAME.get()) {
             // When minigame is disabled

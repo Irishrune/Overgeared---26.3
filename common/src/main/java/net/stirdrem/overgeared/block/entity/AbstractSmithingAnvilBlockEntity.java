@@ -68,6 +68,24 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
     protected static final int BLUEPRINT_SLOT = 11;
     protected boolean hasHeatedItems = false;
     private ItemStack recipePreview = ItemStack.EMPTY;
+    private int perfectStrikes, goodStrikes, missedStrikes;
+    private ForgingQuality strikeQuality;
+    private List<ItemStack> treatmentInputs = List.of();
+
+    public ForgingQuality getStrikeQuality() { return strikeQuality == null ? anvilBlock.getQuality() : strikeQuality; }
+
+    public boolean recordStrikeCounts(int perfect, int good, int missed) {
+        if (!isMinigameOn() || !hasRecipe() || perfect < perfectStrikes || good < goodStrikes || missed < missedStrikes
+                || (long)perfect + good + missed != (long)progress + 1
+                || perfect - perfectStrikes + good - goodStrikes + missed - missedStrikes != 1) return false;
+        if (!treatmentInputs.isEmpty()) for (int i = 0; i < 9; i++)
+            if (!ItemStack.matches(treatmentInputs.get(i), itemHandler.getStackInSlot(i))) return false;
+        perfectStrikes = perfect; goodStrikes = good; missedStrikes = missed;
+        strikeQuality = ForgingQuality.fromString(net.stirdrem.overgeared.util.ForgingScore.rank(perfect, good, missed,
+                ServerConfig.PERFECT_QUALITY_SCORE.get(), ServerConfig.EXPERT_QUALITY_SCORE.get(), ServerConfig.WELL_QUALITY_SCORE.get()));
+        return true;
+    }
+
 
     public ItemStack getRecipePreview() {
         return recipePreview.copy();
@@ -241,6 +259,9 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
     public void resetProgress(BaseSmithingAnvilBlock anvilBlock) {
         progress = 0;
         maxProgress = 0;
+        perfectStrikes = goodStrikes = missedStrikes = 0;
+        strikeQuality = null;
+        treatmentInputs = List.of();
         lastRecipe = null;
         if (level != null && !level.isClientSide()) {
             if (minigameOn)
@@ -258,6 +279,21 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
             return;
 
         ForgingRecipe recipe = recipeOptional.get();
+        if (recipe.isTreatment()) {
+            if (anvilTier != AnvilTier.IRON || !ServerConfig.ENABLE_MINIGAME.get() || !isMinigameOn()) return;
+            var outcome = net.stirdrem.overgeared.util.SmithingTreatments.outcome(recipe.treatment(),
+                    perfectStrikes, goodStrikes, missedStrikes, recipe.getHammeringRequired());
+            if (perfectStrikes + goodStrikes + missedStrikes != recipe.getHammeringRequired()) return;
+            if (!itemHandler.getStackInSlot(OUTPUT_SLOT).isEmpty()) return;
+            ItemStack original = recipe.treatmentInput(new RecipeWrapper(itemHandler));
+            ItemStack treated = net.stirdrem.overgeared.util.SmithingTreatments.apply(original, outcome);
+            for (int i = 0; i < 9; i++) itemHandler.extractItem(i, 1, false);
+            itemHandler.setStackInSlot(OUTPUT_SLOT, treated);
+            if (player instanceof ServerPlayer smith) smith.sendSystemMessage(Component.translatable(
+                    outcome == null ? "message.overgeared.treatment_failed" : outcome.flawless()
+                            ? "message.overgeared.treatment_flawless" : "message.overgeared.treatment_success"), true);
+            return;
+        }
         // Use the actual matched ingredients before consuming them. The old
         // getResultItem() path discarded transfer_nbt/component data entirely.
         ItemStack result = recipe.assemble(new RecipeWrapper(itemHandler));
@@ -402,7 +438,8 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
         int usesToLevel = BlueprintItem.getUsesToNextLevel(blueprint);
 
         // Attempt to read the ForgingQuality from result
-        ForgingQuality resultQuality = anvilBlock.getQuality();
+        ForgingQuality resultQuality = getStrikeQuality();
+        if (resultQuality == null) return;
         if (!ServerConfig.EXPERT_ABOVE_INCREASE_BLUEPRINT.get()
                 || resultQuality.ordinal() >= ForgingQuality.EXPERT.ordinal()) {
             uses += switch (resultQuality) {
@@ -449,6 +486,8 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
             return false;
 
         ForgingRecipe recipe = recipeOptional.get();
+        if (recipe.isTreatment()) return anvilTier == AnvilTier.IRON && ServerConfig.ENABLE_MINIGAME.get()
+                && itemHandler.getStackInSlot(OUTPUT_SLOT).isEmpty();
         AnvilTier requiredTier = AnvilTier.fromDisplayName(recipe.getAnvilTier());
 
         // Safely skip if tier is invalid
@@ -467,6 +506,8 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
             return false;
 
         ForgingRecipe recipe = recipeOptional.get();
+        if (recipe.isTreatment()) return anvilTier == AnvilTier.IRON && ServerConfig.ENABLE_MINIGAME.get()
+                && itemHandler.getStackInSlot(OUTPUT_SLOT).isEmpty();
 
         // Tier check
         AnvilTier requiredTier = AnvilTier.fromDisplayName(recipe.getAnvilTier());
@@ -504,6 +545,15 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
 
     /** Server-only diagnosis: clients do not possess the recipe database. */
     public Component forgingProblem() {
+        var current = getCurrentRecipe();
+        if (current.isPresent() && current.get().isTreatment()) {
+            if (anvilTier != AnvilTier.IRON) return Component.translatable("message.overgeared.treatment_iron");
+            if (!ServerConfig.ENABLE_MINIGAME.get()) return Component.translatable("message.overgeared.treatment_timing");
+        }
+        for (int i = 0; i < 9; i++) {
+            String name = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(itemHandler.getStackInSlot(i).getItem()).getPath();
+            if (name.startsWith("diamond_") || name.startsWith("netherite_")) return Component.translatable("message.overgeared.treatment_upgrade");
+        }
         RecipeWrapper input = new RecipeWrapper(itemHandler);
         var candidates = net.stirdrem.overgeared.recipe.RecipeLookups.all(level, net.stirdrem.overgeared.recipe.ModRecipeTypes.FORGING.get()).stream()
                 .map(RecipeHolder::value).filter(recipe -> recipe.matchesIngredients(input)).toList();
@@ -707,7 +757,7 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
 
     @Override
     protected ForgingQuality determineForgingQuality() {
-        ForgingQuality quality = anvilBlock.getQuality();
+        ForgingQuality quality = getStrikeQuality();
         if (quality == null)
             return ForgingQuality.WELL;
         Optional<ForgingRecipe> recipeOptional = getCurrentRecipe();
@@ -746,36 +796,8 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
                     return ForgingQuality.POOR;
                 case "expert":
                     return ForgingQuality.EXPERT;
-                case "perfect": {
-                    Random random = new Random();
-
-                    // Check if any crafting slot contains a Master-quality ingredient
-                    boolean hasMasterIngredient = false;
-                    for (int i = 0; i < this.itemHandler.getSlots(); i++) {
-                        if (i == OUTPUT_SLOT || i == BLUEPRINT_SLOT)
-                            continue; // skip output + blueprint
-                        ItemStack stack = this.itemHandler.getStackInSlot(i);
-                        ForgingQuality ingQuality = stack.get(ModComponents.FORGING_QUALITY.get());
-                        if (!stack.isEmpty() && ingQuality == ForgingQuality.MASTER) {
-                            hasMasterIngredient = true;
-                            break;
-                        }
-                    }
-
-                    // Normal Master roll from config
-                    boolean masterRoll = ServerConfig.MASTER_QUALITY_CHANCE.get() != 0
-                            && random.nextFloat() < ServerConfig.MASTER_QUALITY_CHANCE.get();
-
-                    // Ingredient-based boost
-                    boolean ingredientMasterRoll = hasMasterIngredient
-                            && random.nextFloat() < ServerConfig.MASTER_FROM_INGREDIENT_CHANCE.get();
-
-                    if ("master".equals(blueprintQualityStr) || masterRoll || ingredientMasterRoll) {
-                        return ForgingQuality.MASTER;
-                    } else {
-                        return ForgingQuality.PERFECT;
-                    }
-                }
+                case "perfect":
+                    return "master".equals(blueprintQualityStr) ? ForgingQuality.MASTER : ForgingQuality.PERFECT;
                 case "master":
                     return ForgingQuality.MASTER;
                 default:
@@ -788,41 +810,11 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
     @Override
     protected ForgingQuality determineForgingQualityNoBlueprint() {
         // Get quality from anvil or use default if null
-        ForgingQuality quality = anvilBlock.getQuality();
+        ForgingQuality quality = getStrikeQuality();
         if (quality == null) {
             return ForgingQuality.POOR; // Default quality
         }
-        if (quality.equals(ForgingQuality.PERFECT)) {
-            Random random = new Random();
-
-            // 🔹 Check if any crafting slot contains a Master-quality ingredient
-            boolean hasMasterIngredient = false;
-            for (int i = 0; i < this.itemHandler.getSlots(); i++) {
-                if (i == OUTPUT_SLOT || i == BLUEPRINT_SLOT)
-                    continue; // skip output + blueprint
-                ItemStack stack = this.itemHandler.getStackInSlot(i);
-                ForgingQuality ingQuality = stack.get(ModComponents.FORGING_QUALITY.get());
-                if (!stack.isEmpty() && ingQuality == ForgingQuality.MASTER) {
-                    hasMasterIngredient = true;
-                    break;
-                }
-            }
-
-            // Normal Master roll from config
-            boolean masterRoll = ServerConfig.MASTER_QUALITY_CHANCE.get() != 0
-                    && random.nextFloat() < ServerConfig.MASTER_QUALITY_CHANCE.get();
-
-            // Ingredient-based boost
-            boolean ingredientMasterRoll = hasMasterIngredient
-                    && random.nextFloat() < ServerConfig.MASTER_FROM_INGREDIENT_CHANCE.get();
-
-            if (masterRoll || ingredientMasterRoll) {
-                return ForgingQuality.MASTER;
-            } else {
-                return ForgingQuality.PERFECT;
-            }
-        } else
-            return quality;
+        return quality;
     }
 
     @Override
@@ -844,11 +836,6 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
 
     @Override
     public ForgingQuality qualityFromBlueprint() {
-        ForgingQuality quality = anvilBlock.getQuality();
-        if (quality == null) {
-            return ForgingQuality.NONE; // fallback when global quality is missing
-        }
-
         Optional<ForgingRecipe> recipeOptional = getCurrentRecipe();
         if (recipeOptional.isEmpty()) {
             return ForgingQuality.POOR; // no recipe = base fallback
@@ -865,12 +852,9 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
                     ForgingQuality.PERFECT, ForgingQuality.MASTER);
 
             // Missing or invalid blueprint → cap quality
-            String poor = quality.equals(ForgingQuality.POOR)
-                    ? ForgingQuality.POOR.getDisplayName()
-                    : ForgingQuality.NONE.getDisplayName();
             BlueprintData blueprintData = blueprint.get(ModComponents.BLUEPRINT_DATA.get());
             if (blueprint.isEmpty() || blueprintData == null) {
-                return ForgingQuality.fromString(poor);
+                return ForgingQuality.NONE;
             }
 
             String bpQuality = blueprintData.quality().toLowerCase(java.util.Locale.ROOT);
@@ -990,6 +974,15 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
 
     @Override
     public void setMinigameOn(boolean value) {
+        if (value && !this.minigameOn) {
+            perfectStrikes = goodStrikes = missedStrikes = 0;
+            strikeQuality = null;
+            if (getCurrentRecipe().map(ForgingRecipe::isTreatment).orElse(false)) {
+                List<ItemStack> snapshot = new ArrayList<>();
+                for (int i = 0; i < 9; i++) snapshot.add(itemHandler.getStackInSlot(i).copy());
+                treatmentInputs = List.copyOf(snapshot);
+            }
+        }
         this.minigameOn = value;
         setChanged(); // mark dirty for save
     }

@@ -19,5 +19,8 @@
   "hammering": 3,
   "tier": "iron",
   "need_quenching": false,
-  "has_polishing": false
+  "has_polishing": false,
+  "blueprint": [
+    "boots"
+  ]
 }

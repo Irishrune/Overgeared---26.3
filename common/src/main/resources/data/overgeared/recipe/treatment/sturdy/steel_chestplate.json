@@ -1,0 +1,30 @@
+{
+  "type": "overgeared:forging",
+  "category": "misc",
+  "treatment": "sturdy",
+  "pattern": [
+    "EM",
+    " M",
+    " M"
+  ],
+  "key": {
+    "E": {
+      "ingredient": "overgeared:steel_chestplate",
+      "transfer_nbt": true
+    },
+    "M": {
+      "ingredient": "minecraft:iron_nugget"
+    }
+  },
+  "result": {
+    "id": "overgeared:steel_chestplate",
+    "count": 1
+  },
+  "hammering": 4,
+  "tier": "iron",
+  "has_quality": false,
+  "needs_minigame": true,
+  "has_polishing": false,
+  "need_quenching": false,
+  "quality_difficulty": "expert"
+}

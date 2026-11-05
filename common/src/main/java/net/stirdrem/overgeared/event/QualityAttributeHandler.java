@@ -67,7 +67,7 @@ public class QualityAttributeHandler {
      */
     public static ItemAttributeModifiers applyQualityModifiers(ItemStack stack, ItemAttributeModifiers modifiers) {
         ForgingQuality quality = stack.get(ModComponents.FORGING_QUALITY.get());
-        if (quality == null || quality == ForgingQuality.NONE || isBroken(stack)) {
+        if ((quality == null || quality == ForgingQuality.NONE) && !stack.has(ModComponents.TREATMENT.get()) || isBroken(stack)) {
             return modifiers;
         }
         List<ItemAttributeModifiers.Entry> entries = new ArrayList<>(modifiers.modifiers());
@@ -92,7 +92,7 @@ public class QualityAttributeHandler {
                 }
             }
         });
-        return new ItemAttributeModifiers(entries);
+        return net.stirdrem.overgeared.util.SmithingTreatments.attributes(stack, new ItemAttributeModifiers(entries));
     }
 
     public static boolean matches(ItemStack stack, List<QualityTarget> targets) {

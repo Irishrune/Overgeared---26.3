@@ -4,8 +4,7 @@
   "compatibilityLevel": "JAVA_25",
   "minVersion": "0.8",
   "refmap": "overgeared.refmap.json",
-  "client": [
-  ],
+  "client": [],
   "mixins": [
     "BrewingStandBlockEntityMixin",
     "ContainerCoolingMixin",
@@ -15,7 +14,8 @@
     "ItemStackStackingMixin",
     "MobHeatedItemMixin",
     "PotionItemMixin",
-    "SlotMixin"
+    "SlotMixin",
+    "SmithingUpgradeMixin"
   ],
   "injectors": {
     "defaultRequire": 1

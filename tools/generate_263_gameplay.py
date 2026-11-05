@@ -200,6 +200,8 @@ def generate():
             criteria['has_the_recipe']={'trigger':'minecraft:recipe_unlocked','conditions':{'recipes':[id]}}
             put('advancement',id.replace(':',':recipes/'),{'parent':'minecraft:recipes/root','criteria':criteria,'requirements':[list(criteria)],'rewards':{'recipes':[id]}})
     if count<150: raise ValueError('Provider unexpectedly incomplete: '+str(count))
+    from smithing_progression_data import add_progression
+    add_progression(out, OUT)
     return out
 
 if __name__=='__main__':

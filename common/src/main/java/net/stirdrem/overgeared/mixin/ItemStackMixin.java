@@ -46,7 +46,8 @@ public abstract class ItemStackMixin {
             return;
         }
 
-        float baseSpeed = cir.getReturnValueF();
+        float baseSpeed = cir.getReturnValueF() * net.stirdrem.overgeared.util.SmithingTreatments.miningMultiplier(stack);
+        cir.setReturnValue(baseSpeed);
 
         ForgingQuality quality = stack.get(ModComponents.FORGING_QUALITY.get());
         if (quality != null) {
@@ -78,7 +79,7 @@ public abstract class ItemStackMixin {
                 qualityMultiplier,
                 reductions == null ? 0 : reductions,
                 ServerConfig.DURABILITY_REDUCE_PER_GRIND.get().floatValue());
-        cir.setReturnValue(calculated);
+        cir.setReturnValue(Math.max(1, Math.round(calculated * net.stirdrem.overgeared.util.SmithingTreatments.durabilityMultiplier(stack))));
     }
 
     @Inject(method = "getBarWidth", at = @At("HEAD"), cancellable = true)

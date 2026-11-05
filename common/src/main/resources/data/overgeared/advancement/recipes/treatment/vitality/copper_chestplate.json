@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_equipment": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "overgeared:copper_chestplate"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_equipment"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "overgeared:treatment/vitality/copper_chestplate"
+    ]
+  }
+}

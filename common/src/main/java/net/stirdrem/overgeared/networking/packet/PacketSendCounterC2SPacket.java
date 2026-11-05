@@ -26,7 +26,8 @@ public record PacketSendCounterC2SPacket(
         BlockPos pos,
         Identifier hitSound,
         Identifier completeSound,
-        Identifier failedSound
+        Identifier failedSound,
+        int perfect, int good, int missed
 ) implements CustomPacketPayload {
     public static final Identifier ID = OvergearedMod.loc("packet_send_counter");
     public static final CustomPacketPayload.Type<PacketSendCounterC2SPacket> TYPE = new CustomPacketPayload.Type<>(ID);
@@ -39,6 +40,7 @@ public record PacketSendCounterC2SPacket(
                 Identifier.STREAM_CODEC.encode(buffer, packet.hitSound);
                 Identifier.STREAM_CODEC.encode(buffer, packet.completeSound);
                 Identifier.STREAM_CODEC.encode(buffer, packet.failedSound);
+                buffer.writeVarInt(packet.perfect); buffer.writeVarInt(packet.good); buffer.writeVarInt(packet.missed);
             },
             buffer -> new PacketSendCounterC2SPacket(
                     ByteBufCodecs.STRING_UTF8.decode(buffer),
@@ -46,7 +48,8 @@ public record PacketSendCounterC2SPacket(
 
                     Identifier.STREAM_CODEC.decode(buffer),
                     Identifier.STREAM_CODEC.decode(buffer),
-                    Identifier.STREAM_CODEC.decode(buffer)
+                    Identifier.STREAM_CODEC.decode(buffer),
+                    buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt()
             )
     );
 
@@ -73,7 +76,10 @@ public record PacketSendCounterC2SPacket(
             ItemStack mainHand = player.getMainHandItem();
             if (!mainHand.is(ModTags.Items.SMITHING_HAMMERS)) return;
 
-            anvilBlock.setQuality(ForgingQuality.fromString(payload.quality));
+            if (!(anvilBE instanceof net.stirdrem.overgeared.block.entity.AbstractSmithingAnvilBlockEntity smithing)
+                    || !smithing.recordStrikeCounts(payload.perfect, payload.good, payload.missed)) return;
+            // Calculate the rank from validated cumulative counts, never from the supplied rank string.
+            anvilBlock.setQuality(smithing.getStrikeQuality());
             mainHand.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
 
             anvilBE.increaseForgingProgress(level, pos, state);

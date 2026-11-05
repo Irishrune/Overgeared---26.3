@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_equipment": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "overgeared:iron_sword_blade"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_equipment"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "overgeared:treatment/heavy/iron_sword_blade"
+    ]
+  }
+}

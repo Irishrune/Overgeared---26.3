@@ -171,6 +171,8 @@ public class ModEvents {
     public static void onTooltip(ItemStack stack, List<Component> tooltip) {
         int insertOffset = 1;
 
+        tooltip.addAll(insertOffset, net.stirdrem.overgeared.util.SmithingTreatments.tooltip(stack));
+
         // Add Forging Quality
         ForgingQuality quality = stack.get(ModComponents.FORGING_QUALITY.get());
         if (quality != null) {

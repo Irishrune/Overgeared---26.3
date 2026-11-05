@@ -308,8 +308,8 @@ public class ServerConfig {
         EXPERT_MAX_USE = builder.comment("Uses required to reach the next quality after Expert").defineInRange("expertMaxUse", 20, 0, 1000);
         WELL_MAX_USE = builder.comment("Uses required to reach the next quality after Well").defineInRange("wellMaxUse", 10, 0, 1000);
         POOR_MAX_USE = builder.comment("Uses required to reach the next quality after Poor").defineInRange("poorMaxUse", 5, 0, 1000);
-        PERFECT_BLUEPRINT_UPGRADE_TO_MASTER = builder.comment("Allow Perfect blueprints to keep leveling up into Master blueprints. If false, Perfect is the max blueprint level.").define("perfectBlueprintUpgradeToMaster", false);
-        PERFECT_MAX_USE = builder.comment("Uses required to reach Master after Perfect (only used when perfectBlueprintUpgradeToMaster is true)").defineInRange("perfectMaxUse", 50, 0, 1000);
+        PERFECT_BLUEPRINT_UPGRADE_TO_MASTER = builder.comment("Allow Perfect blueprints to keep leveling up into Master blueprints. If false, Perfect is the max blueprint level.").define("masterworkBlueprintProgression", true);
+        PERFECT_MAX_USE = builder.comment("Uses required to reach Master after Perfect (only used when masterworkBlueprintProgression is true)").defineInRange("masterworkBlueprintProgressPoints", 30, 1, 1000);
         builder.pop();
 
         builder.push("Durability Bonuses");

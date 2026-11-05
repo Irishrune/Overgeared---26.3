@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_equipment": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:iron_axe"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_equipment"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "overgeared:treatment/sturdy/iron_axe"
+    ]
+  }
+}

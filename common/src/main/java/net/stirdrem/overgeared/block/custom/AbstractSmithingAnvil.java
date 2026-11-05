@@ -148,7 +148,8 @@ public abstract class AbstractSmithingAnvil extends BaseSmithingAnvilBlock imple
                 AnvilMinigameEvents.resetPopUps();
                 String hitQuality = AnvilMinigameEvents.handleHit();
                 PacketDistributor.sendToServer(new PacketSendCounterC2SPacket(hitQuality, pos,
-                        ModSounds.ANVIL_HIT.getId(), ModSounds.FORGING_COMPLETE.getId(), ModSounds.FORGING_FAILED.getId()));
+                        ModSounds.ANVIL_HIT.getId(), ModSounds.FORGING_COMPLETE.getId(), ModSounds.FORGING_FAILED.getId(),
+                        AnvilMinigameEvents.getPerfectHits(), AnvilMinigameEvents.getGoodHits(), AnvilMinigameEvents.getMissedHits()));
                 // Intentional second speed-up: handleHit() already applies one. The minigame's
                 // difficulty is tuned around 2x the configured arrowSpeedIncrease per hit.
                 AnvilMinigameEvents.speedUp();
