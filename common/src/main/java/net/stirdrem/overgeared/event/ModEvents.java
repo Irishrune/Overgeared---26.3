@@ -222,7 +222,7 @@ public class ModEvents {
 
         // Smithing Hammer special tooltip
         if (stack.is(ModTags.Items.SMITHING_HAMMERS)) {
-            if (!Screen.hasShiftDown()) {
+            if (!Minecraft.getInstance().options.keyShift.isDown()) {
                 tooltip.add(insertOffset, Component.translatable("tooltip.overgeared.smithing_hammer.hold_shift")
                         .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
             } else {
