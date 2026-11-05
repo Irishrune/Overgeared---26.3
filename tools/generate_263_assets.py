@@ -85,9 +85,14 @@ def assets() -> dict[Path, dict]:
             'parent': 'minecraft:item/handheld' if handheld else 'minecraft:item/generated',
             'textures': layers,
         }
-        result[RES / f'items/{item}.json'] = {
-            'model': {'type': 'minecraft:model', 'model': f'overgeared:item/{item}'}
-        }
+        client_model = {'type': 'minecraft:model', 'model': f'overgeared:item/{item}'}
+        if item in {'lingering_arrow', 'iron_arrow', 'steel_arrow', 'diamond_arrow'}:
+            # ColorProviderRegistry.ITEM was removed in 1.21.4. Vanilla's
+            # potion tint source reads the stack's POTION_CONTENTS component,
+            # preserving the original per-arrow tint behavior without Java
+            # client color hooks. White (-1) means no potion color applied.
+            client_model['tints'] = [{'type': 'minecraft:potion', 'default': -1}]
+        result[RES / f'items/{item}.json'] = {'model': client_model}
 
     # BlockItem instances are registered in ModBlocks; these refer to block
     # geometry rather than generating sprite-only inventory representations.
