@@ -9,10 +9,9 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.item.ArmorItem;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ProjectileWeaponItem;
-import net.minecraft.world.item.TieredItem;
 import net.stirdrem.overgeared.OvergearedMod;
 import net.stirdrem.overgeared.datapack.quality_attribute.QualityAttributeDefinition;
 import net.stirdrem.overgeared.datapack.quality_attribute.QualityTarget;
@@ -128,15 +127,15 @@ public class QualityAttributeReloadListener
 
                     case ITEM -> {
                         if (target.id() != null) {
-                            Item item = BuiltInRegistries.ITEM.get(target.id());
-                            items.add(item);
+                            Item item = BuiltInRegistries.ITEM.getValue(target.id());
+                            if (item != null) items.add(item);
                         }
                     }
 
                     case ITEM_TAG -> {
                         if (target.id() != null) {
                             TagKey<Item> tag = TagKey.create(Registries.ITEM, target.id());
-                            BuiltInRegistries.ITEM.holders()
+                            BuiltInRegistries.ITEM.listElements()
                                     .filter(holder -> holder.is(tag))
                                     .forEach(holder -> items.add(holder.value()));
                         }
@@ -144,17 +143,20 @@ public class QualityAttributeReloadListener
 
                     case WEAPON -> {
                         BuiltInRegistries.ITEM.stream().forEach(item -> {
-                            if (item instanceof TieredItem ||
-                                    item instanceof ProjectileWeaponItem) {
-                                items.add(item);
+                            var stack = item.getDefaultInstance();
+                            if (stack.has(DataComponents.WEAPON)
+                                    || stack.has(DataComponents.TOOL)
+                                    || item instanceof ProjectileWeaponItem) {
+                                if (item != null) items.add(item);
                             }
                         });
                     }
 
                     case ARMOR -> {
                         BuiltInRegistries.ITEM.stream().forEach(item -> {
-                            if (item instanceof ArmorItem) {
-                                items.add(item);
+                            var equippable = item.getDefaultInstance().get(DataComponents.EQUIPPABLE);
+                            if (equippable != null && equippable.slot().isArmor()) {
+                                if (item != null) items.add(item);
                             }
                         });
                     }
