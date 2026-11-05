@@ -1,20 +1,3 @@
 {
-  "type": "minecraft:blasting",
-  "experience": 0.0,
-  "cookingtime": 100,
-  "ingredient": "minecraft:air",
-  "result": "minecraft:air",
-  "neoforge:conditions": [
-    {
-      "type": "neoforge:false"
-    }
-  ],
-  "fabric:load_conditions": [
-    {
-      "condition": "fabric:not",
-      "value": {
-        "condition": "fabric:true"
-      }
-    }
-  ]
+  "type": "overgeared:disabled"
 }

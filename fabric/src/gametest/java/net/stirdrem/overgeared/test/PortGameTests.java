@@ -22,6 +22,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import java.util.*;
+import com.google.gson.JsonParser;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 
 public class PortGameTests {
     private static void check(boolean condition, String message) {
@@ -122,6 +125,17 @@ public class PortGameTests {
         test.succeed();
     }
 
+    @GameTest public void disabledVanillaShortcutsRemainUncraftable(GameTestHelper test) {
+        for (String id : List.of("minecraft:diamond_pickaxe", "minecraft:tipped_arrow", "minecraft:iron_ingot_from_blasting_raw_iron")) {
+            var disabled = recipe(test, id);
+            check(disabled instanceof DisabledRecipe, "Vanilla shortcut re-enabled: " + id);
+            check(disabled.display().isEmpty() && disabled.isSpecial(), "Disabled recipe appears in recipe book");
+            check(!((DisabledRecipe)disabled).matches(CraftingInput.of(1, 1, List.of(new ItemStack(Items.BARRIER))), test.getLevel()),
+                    "Disabled recipe has a crafting match");
+        }
+        test.succeed();
+    }
+
     @GameTest public void forgingSettingsRoundTrip(GameTestHelper test) {
         RecipeBookSettings settings = new RecipeBookSettings();
         settings.setOpen(OvergearedMod.FORGING, true);
@@ -140,6 +154,67 @@ public class PortGameTests {
             check(synced.isOpen(OvergearedMod.FORGING) && synced.isFiltering(OvergearedMod.FORGING), "Network settings lost forging state");
             check(buf.readableBytes() == 0, "Settings left network bytes unread");
         } finally { buf.release(); }
+        test.succeed();
+    }
+
+    @GameTest public void transferredComponentsKeepTheResultItemDefaults(GameTestHelper test) {
+        var ops = test.getLevel().registryAccess().createSerializationContext(JsonOps.INSTANCE);
+        var json = JsonParser.parseString("""
+            {"pattern":["H"],"key":{"H":{"ingredient":"overgeared:iron_pickaxe_head",
+             "requires_heated":true,"transfer_nbt":true}},"result":{"id":"minecraft:iron_pickaxe"}}
+            """);
+        var recipe = ForgingRecipe.Serializer.CODEC.codec().parse(ops, json).getOrThrow();
+        ItemStack[] grid = new ItemStack[12];
+        Arrays.fill(grid, ItemStack.EMPTY);
+        var head = new ItemStack(ModItems.IRON_PICKAXE_HEAD.get());
+        head.set(ModComponents.FORGING_QUALITY.get(), ForgingQuality.EXPERT);
+        head.set(ModComponents.CREATOR.get(), "Mixed-material smith");
+        grid[8] = head;
+        check(!recipe.matches(input(grid), test.getLevel()), "Heated ingredient requirement ignored");
+        head.set(ModComponents.HEATED_COMPONENT.get(), true);
+        check(recipe.matches(input(grid), test.getLevel()), "Heated recipe cannot match the shifted head");
+        var result = recipe.assemble(input(grid));
+        var expected = new ItemStack(Items.IRON_PICKAXE);
+        check(result.get(ModComponents.FORGING_QUALITY.get()) == ForgingQuality.EXPERT, "Transferred quality lost");
+        check("Mixed-material smith".equals(result.get(ModComponents.CREATOR.get())), "Transferred creator lost");
+        check(Objects.equals(expected.get(DataComponents.ITEM_MODEL), result.get(DataComponents.ITEM_MODEL)), "Tool inherited the head model");
+        check(expected.getMaxStackSize() == result.getMaxStackSize(), "Tool inherited the head stack size");
+        test.succeed();
+    }
+
+    @GameTest public void mixedCastMaterialsSurviveSaveAndNetwork(GameTestHelper test) {
+        var mold = new ItemStack(ModItems.CLAY_TOOL_CAST.get());
+        Map<String, Integer> materials = Map.of("iron", 18, "copper", 9);
+        mold.set(ModComponents.CAST_DATA.get(), new CastData("expert", "pickaxe", materials, 27, 27,
+                List.of(new ItemStack(Items.IRON_INGOT, 2), new ItemStack(Items.COPPER_INGOT)), ItemStack.EMPTY, true));
+        var ops = test.getLevel().registryAccess().createSerializationContext(JsonOps.INSTANCE);
+        var encoded = ItemStack.CODEC.encodeStart(ops, mold).getOrThrow();
+        var saved = ItemStack.CODEC.parse(ops, encoded).getOrThrow();
+        check(saved.get(ModComponents.CAST_DATA.get()).materials().equals(materials), "Saved cast lost a material");
+        var buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), test.getLevel().registryAccess());
+        try {
+            ItemStack.STREAM_CODEC.encode(buffer, mold);
+            var synced = ItemStack.STREAM_CODEC.decode(buffer).get(ModComponents.CAST_DATA.get());
+            check(synced.materials().equals(materials) && synced.amount() == 27 && synced.heated(), "Network cast data changed");
+            check(buffer.readableBytes() == 0, "Cast left network bytes unread");
+        } finally { buffer.release(); }
+        test.succeed();
+    }
+
+    @GameTest public void hammeringConsumesIngredientsAndProducesAHead(GameTestHelper test) {
+        BlockPos pos = new BlockPos(1, 2, 1);
+        test.setBlock(pos.below(), Blocks.STONE);
+        test.setBlock(pos, ModBlocks.STONE_SMITHING_ANVIL.get());
+        var anvil = test.getBlockEntity(pos, BaseSmithingAnvilBlockEntity.class);
+        for (int i = 6; i < 9; i++) anvil.getItemHandler().setStackInSlot(i, new ItemStack(ModItems.HEATED_IRON_INGOT.get(), 2));
+        anvil.getItemHandler().setStackInSlot(9, new ItemStack(ModItems.COPPER_SMITHING_HAMMER.get()));
+        check(anvil.hasRecipe(), "Stone anvil cannot forge iron head");
+        for (int i = 0; i < 3; i++) anvil.increaseForgingProgress(test.getLevel(), anvil.getBlockPos(), anvil.getBlockState());
+        var result = anvil.getItemHandler().getStackInSlot(10);
+        check(result.is(ModItems.IRON_PICKAXE_HEAD.get()) && result.getCount() == 1, "Hammering produced no head");
+        for (int i = 6; i < 9; i++) check(anvil.getItemHandler().getStackInSlot(i).getCount() == 1, "Hammering consumed the wrong amount");
+        check(Boolean.TRUE.equals(result.get(ModComponents.HEATED_COMPONENT.get())), "Forged head skipped quenching");
+        check(Boolean.FALSE.equals(result.get(ModComponents.POLISHED.get())), "Forged head skipped polishing");
         test.succeed();
     }
 

@@ -25,9 +25,9 @@ class SerializerPortTests(unittest.TestCase):
     def test_all_recipe_serializers_use_record_construction(self):
         source=REGISTER.read_text()
         declarations=re.findall(r'public static final Supplier<RecipeSerializer<([A-Za-z]+Recipe)>>\s+([A-Z_]+)',source)
-        self.assertEqual(20,len(declarations))
-        self.assertEqual(20,len(set(x[0] for x in declarations)))
-        self.assertEqual(20,source.count('() -> recipe('))
+        self.assertEqual(21,len(declarations))
+        self.assertEqual(21,len(set(x[0] for x in declarations)))
+        self.assertEqual(21,source.count('() -> recipe('))
         self.assertIn('return new RecipeSerializer<>(codec, networkCodec);',source)
         self.assertNotIn('SimpleCraftingRecipeSerializer',source)
         self.assertNotIn('.Serializer::new',source)
@@ -57,7 +57,7 @@ class SerializerPortTests(unittest.TestCase):
             self.assertRegex(text,r'public ItemStack assemble\(\w+\s+\w+\)')
             self.assertNotRegex(text,r'public ItemStack assemble\([^)]*HolderLookup\.Provider')
             count+=1
-        self.assertEqual(20,count)
+        self.assertEqual(21,count)
         menu=(ROOT/'common/src/main/java/net/stirdrem/overgeared/screen/FletchingStationMenu.java').read_text()
         self.assertEqual(2,menu.count('.assemble(recipeInput)'))
         self.assertNotIn('.assemble(recipeInput, level.registryAccess())',menu)
@@ -122,6 +122,6 @@ System.out.println("{len(registered)} recipe serializers initialized with 26.3 r
             self.assertEqual(result.returncode,0,result.stderr)
             result=subprocess.run(['java','-cp',str(classesDir),'net.stirdrem.overgeared.recipe.SerializerSmoke'],capture_output=True,text=True,timeout=10)
             self.assertEqual(result.returncode,0,result.stderr)
-            self.assertIn('20 recipe serializers initialized',result.stdout)
+            self.assertIn('21 recipe serializers initialized',result.stdout)
 
 if __name__=='__main__':unittest.main()

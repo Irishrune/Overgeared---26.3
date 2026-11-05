@@ -8,8 +8,6 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.component.DataComponentMap;
-import net.minecraft.core.component.DataComponentType;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.core.component.DataComponents;
@@ -670,25 +668,11 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
 
 
     public static void mergeComponents(ItemStack target, ItemStack source) {
-        DataComponentMap sourceComponents = source.getComponents();
-        DataComponentMap targetComponents = target.getComponents();
-
-        for (DataComponentType<?> type : sourceComponents.keySet()) {
-            // If target already has component â†’ overwrite
-            if (targetComponents.has(type)) {
-                target.remove(type);
-            }
-
-            // Copy component value
-            copyComponent(target, source, type);
-        }
-    }
-
-    private static <T> void copyComponent(ItemStack target, ItemStack source, DataComponentType<T> type) {
-        T value = source.get(type);
-        if (value != null) {
-            target.set(type, value);
-        }
+        // Transfer per-stack data (quality, creator, enchantments and custom
+        // material components), while retaining the result item's own defaults.
+        // Copying getComponents() also copies the source item's model, name,
+        // stack size and attributes, which can turn a forged tool into its head.
+        target.applyComponents(source.getComponentsPatch());
     }
 
 }
