@@ -25,6 +25,13 @@ public class PortClientGameTests implements FabricClientGameTest {
         try (var world = context.worldBuilder().create()) {
             world.getConnection().waitForChunksRender();
             System.out.println("Overgeared client test: world rendered");
+            world.getServer().runOnServer(server -> {
+                var player = world.getConnection().getServerPlayer();
+                player.awardRecipes(player.level().recipeAccess().getRecipes().stream()
+                        .filter(recipe -> recipe.value() instanceof net.stirdrem.overgeared.recipe.ForgingRecipe).toList());
+            });
+            context.waitFor(client -> !client.player.getRecipeBook().getCollection(
+                    net.stirdrem.overgeared.recipe.ForgingRecipeCategories.TOOLS).isEmpty());
             Station[] stations = {
                 new Station(ModBlocks.STONE_SMITHING_ANVIL.get(), StoneSmithingAnvilScreen.class, "stone-anvil"),
                 new Station(ModBlocks.SMITHING_ANVIL.get(), SteelSmithingAnvilScreen.class, "iron-anvil"),

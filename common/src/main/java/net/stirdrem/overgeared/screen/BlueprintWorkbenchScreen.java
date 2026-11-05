@@ -142,7 +142,7 @@ public class BlueprintWorkbenchScreen extends AbstractContainerScreen<BlueprintW
         // Render current tool name or error message
         if (currentToolName != null) {
             int textWidth = this.font.width(currentToolName);
-            int textColor = toolTypes.isEmpty() ? 0xFF0000 : 0x404040; // Red for error, dark gray for normal
+            int textColor = toolTypes.isEmpty() ? 0xFFFF0000 : 0xFF404040; // Red for error, dark gray for normal
             guiGraphics.text(this.font, currentToolName,
                     x + imageWidth / 2 - textWidth / 2, y + 18, textColor, false);
         }

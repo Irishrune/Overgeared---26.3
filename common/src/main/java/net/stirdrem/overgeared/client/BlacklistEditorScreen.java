@@ -156,7 +156,7 @@ public class BlacklistEditorScreen extends Screen {
             int x = this.getContentX();
             int y = this.getContentY();
             int listWidth = this.getContentWidth();
-            int color = item.startsWith("#") ? 0x55FF55 : 0xFFFFFF; // Green for tags, white for items
+            int color = item.startsWith("#") ? 0xFF55FF55 : 0xFFFFFFFF; // Green for tags, white for items
             gui.text(font, item, x + 5, y + 2, color | 0xFF000000);
 
             removeButton.setX(x + listWidth - 90);

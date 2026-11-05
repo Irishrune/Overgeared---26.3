@@ -23,8 +23,8 @@ public class FletchingStationScreen extends AbstractContainerScreen<FletchingSta
 
     @Override
     protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        graphics.text(this.font, this.title, 8, 6, 0x404040, false);
-        graphics.text(this.font, this.playerInventoryTitle, 8, this.imageHeight - 94, 0x404040, false);
+        graphics.text(this.font, this.title, 8, 6, 0xFF404040, false);
+        graphics.text(this.font, this.playerInventoryTitle, 8, this.imageHeight - 94, 0xFF404040, false);
     }
 
 }

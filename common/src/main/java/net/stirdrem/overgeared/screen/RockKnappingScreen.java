@@ -111,8 +111,8 @@ public class RockKnappingScreen extends AbstractContainerScreen<RockKnappingMenu
 
     @Override
     protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        graphics.text(this.font, this.title, this.titleLabelX, this.titleLabelY, 0x404040, false);
-        graphics.text(this.font, this.playerInventoryTitle, 8, this.inventoryLabelY, 0x404040, false);
+        graphics.text(this.font, this.title, this.titleLabelX, this.titleLabelY, 0xFF404040, false);
+        graphics.text(this.font, this.playerInventoryTitle, 8, this.inventoryLabelY, 0xFF404040, false);
     }
 
     private class KnappingImageButton extends ImageButton {

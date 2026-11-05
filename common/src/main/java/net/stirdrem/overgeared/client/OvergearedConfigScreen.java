@@ -643,7 +643,7 @@ public class OvergearedConfigScreen extends Screen {
             int entryHeight = getContentHeight();
             int textWidth = font.width(label);
             int centeredX = x + (listWidth - textWidth) / 2;
-            gui.text(font, label, centeredX, y + (entryHeight / 2) - 4, 0xFFFFFF);
+            gui.text(font, label, centeredX, y + (entryHeight / 2) - 4, 0xFFFFFFFF);
         }
 
         @Override
@@ -678,7 +678,7 @@ public class OvergearedConfigScreen extends Screen {
             int y = getContentY();
             int listWidth = getContentWidth();
             int entryHeight = getContentHeight();
-            gui.text(font, label, x + 2, y + 5, 0xFFFFFF);
+            gui.text(font, label, x + 2, y + 5, 0xFFFFFFFF);
 
             int controlWidth = 80; // toggle width + reset button width + spacing
             toggle.setX(x + listWidth - controlWidth);
@@ -727,7 +727,7 @@ public class OvergearedConfigScreen extends Screen {
             int y = getContentY();
             int listWidth = getContentWidth();
             int entryHeight = getContentHeight();
-            gui.text(font, label, x + 2, y + 5, 0xFFFFFF);
+            gui.text(font, label, x + 2, y + 5, 0xFFFFFFFF);
 
             int controlWidth = 80; // slider width + reset button width + spacing
             slider.setX(x + listWidth - controlWidth);
@@ -784,7 +784,7 @@ public class OvergearedConfigScreen extends Screen {
             int y = getContentY();
             int listWidth = getContentWidth();
             int entryHeight = getContentHeight();
-            gui.text(font, label, x + 2, y + 5, 0xFFFFFF);
+            gui.text(font, label, x + 2, y + 5, 0xFFFFFFFF);
 
             int controlWidth = 80; // slider width + reset button width + spacing
             slider.setX(x + listWidth - controlWidth);
@@ -857,7 +857,7 @@ public class OvergearedConfigScreen extends Screen {
             int y = getContentY();
             int listWidth = getContentWidth();
             int entryHeight = getContentHeight();
-            gui.text(font, label, x + 2, y + 5, 0xFFFFFF);
+            gui.text(font, label, x + 2, y + 5, 0xFFFFFFFF);
             editBox.setX(x + listWidth - 80);
             editBox.setY(y);
             editBox.extractRenderState(gui, mouseX, mouseY, pt);
@@ -957,11 +957,11 @@ public class OvergearedConfigScreen extends Screen {
             int y = getContentY();
             int listWidth = getContentWidth();
             int entryHeight = getContentHeight();
-            gui.text(font, label, x + 2, y + 5, 0xFFFFFF);
+            gui.text(font, label, x + 2, y + 5, 0xFFFFFFFF);
 
             List<? extends String> items = getter.get();
             String itemCountText = " (" + items.size() + " items)";
-            gui.text(font, itemCountText, x + font.width(label) + 5, y + 5, 0xAAAAAA);
+            gui.text(font, itemCountText, x + font.width(label) + 5, y + 5, 0xFFAAAAAA);
 
             editButton.setX(x + listWidth - 80);
             editButton.setY(y);

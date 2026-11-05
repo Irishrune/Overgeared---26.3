@@ -43,9 +43,9 @@ public class NetherAlloySmelterScreen extends AbstractContainerScreen<NetherAllo
         // Center the title
         int titleWidth = this.font.width(this.title);
         int titleX = (this.imageWidth - titleWidth) / 2;
-        guiGraphics.text(this.font, this.title, titleX, this.titleLabelY, 4210752, false);
+        guiGraphics.text(this.font, this.title, titleX, this.titleLabelY, 0xFF404040, false);
 
         // Player inventory title stays at the default position
-        guiGraphics.text(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.imageHeight - 94, 4210752, false);
+        guiGraphics.text(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.imageHeight - 94, 0xFF404040, false);
     }
 }
