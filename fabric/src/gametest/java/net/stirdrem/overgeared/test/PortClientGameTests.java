@@ -41,8 +41,8 @@ public class PortClientGameTests implements FabricClientGameTest {
                 context.waitForScreen(station.screen());
                 context.waitTicks(5);
                 context.takeScreenshot(station.screenshot());
-                if (context.computeOnClient(client -> client.screen instanceof AbstractSmithingAnvilScreen<?>)) {
-                    context.runOnClient(client -> client.screen.children().stream()
+                if (context.computeOnClient(client -> client.gui.screen() instanceof AbstractSmithingAnvilScreen<?>)) {
+                    context.runOnClient(client -> client.gui.screen().children().stream()
                             .filter(ImageButton.class::isInstance).map(ImageButton.class::cast)
                             .findFirst().orElseThrow().onPress(new KeyEvent(40, 40, 0)));
                     context.waitTicks(5);
