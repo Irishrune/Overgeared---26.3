@@ -21,8 +21,10 @@ public class PortClientGameTests implements FabricClientGameTest {
     private record Station(Block block, Class<? extends Screen> screen, String screenshot) {}
 
     @Override public void runTest(ClientGameTestContext context) {
+        System.out.println("Overgeared client test: creating world");
         try (var world = context.worldBuilder().create()) {
             world.getConnection().waitForChunksRender();
+            System.out.println("Overgeared client test: world rendered");
             Station[] stations = {
                 new Station(ModBlocks.STONE_SMITHING_ANVIL.get(), StoneSmithingAnvilScreen.class, "stone-anvil"),
                 new Station(ModBlocks.SMITHING_ANVIL.get(), SteelSmithingAnvilScreen.class, "iron-anvil"),
@@ -34,6 +36,7 @@ public class PortClientGameTests implements FabricClientGameTest {
                 new Station(ModBlocks.DRAFTING_TABLE.get(), BlueprintWorkbenchScreen.class, "blueprint-workbench")
             };
             for (Station station : stations) {
+                System.out.println("Overgeared client test: opening " + station.screenshot());
                 world.getServer().runOnServer(server -> {
                     var player = world.getConnection().getServerPlayer();
                     var level = player.level();
@@ -61,6 +64,7 @@ public class PortClientGameTests implements FabricClientGameTest {
                 }
                 context.runOnClient(client -> client.player.closeContainer());
                 world.getConnection().waitForServerboundPackets();
+                System.out.println("Overgeared client test: passed " + station.screenshot());
             }
         }
     }
