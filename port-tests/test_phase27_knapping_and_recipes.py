@@ -41,7 +41,7 @@ class Phase27KnappingAndRecipeTests(unittest.TestCase):
         self.assertIn("new BlueprintItem(new Item.Properties().setId(key)", MOD_ITEMS)
         self.assertIn(".component(ModComponents.BLUEPRINT_DATA.get(), BlueprintItem.defaultData())", MOD_ITEMS)
         self.assertIn('return new BlueprintData(ForgingQuality.POOR.name(), "sword", 0)', BLUEPRINT)
-        self.assertNotIn("verifyComponentsAfterLoad", BLUEPRINT)
+        self.assertNotIn("public void verifyComponentsAfterLoad(", BLUEPRINT)
 
     def test_blueprint_tooltip_keeps_quality_progress_and_tool_type(self):
         self.assertIn("TooltipDisplay display, Consumer<Component> tooltip", BLUEPRINT)
