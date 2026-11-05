@@ -77,7 +77,7 @@ public class OvergearedConfigScreen extends Screen {
                 Button.builder(Component.literal("Done"), b -> {
                             save();
                             this.scrollPosition = configList.scrollAmount();
-                            this.minecraft.setScreen(parent);
+                            this.minecraft.setScreenAndShow(parent);
                         }).bounds(this.width / 2 - btnW / 2, this.height - 30, btnW, btnH)
                         .build()
         );
@@ -948,7 +948,7 @@ public class OvergearedConfigScreen extends Screen {
                     OvergearedConfigScreen.this
             );
 
-            mc.setScreen(editorScreen);
+            mc.setScreenAndShow(editorScreen);
         }
 
         @Override
