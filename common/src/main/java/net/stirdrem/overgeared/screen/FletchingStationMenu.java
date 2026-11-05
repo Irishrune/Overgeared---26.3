@@ -31,7 +31,7 @@ import net.stirdrem.overgeared.item.ModItems;
 import net.stirdrem.overgeared.recipe.FletchingRecipe;
 import net.stirdrem.overgeared.recipe.ModRecipeTypes;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Optional;
 
@@ -524,7 +524,7 @@ public class FletchingStationMenu extends AbstractContainerMenu {
             return Potions.WATER;
         }
         Identifier location = Identifier.parse(name);
-        Potion potion = BuiltInRegistries.POTION.get(location);
+        Potion potion = BuiltInRegistries.POTION.getValue(location);
         if (potion == null) {
             return Potions.WATER;
         }
