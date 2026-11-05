@@ -8,7 +8,6 @@ import com.google.gson.JsonObject;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
@@ -21,7 +20,7 @@ import net.stirdrem.overgeared.OvergearedMod;
 import java.util.HashMap;
 import java.util.Map;
 
-public class KnappingResourceReloadListener extends SimpleJsonResourceReloadListener {
+public class KnappingResourceReloadListener extends LegacyJsonResourceReloadListener {
 
     private static final Gson GSON = new Gson();
 
