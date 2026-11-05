@@ -7,6 +7,7 @@ import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
 SRC=(ROOT/"common/src/main/java/net/stirdrem/overgeared/item/custom/ToolCastItem.java").read_text(encoding="utf-8")
+CLAY=(ROOT/"common/src/main/java/net/stirdrem/overgeared/item/custom/ClayToolCastItem.java").read_text(encoding="utf-8")
 
 class ToolCast26_3Tests(unittest.TestCase):
     def test_held_cast_material_recovery_uses_new_interaction_result(self):
@@ -44,6 +45,17 @@ class ToolCast26_3Tests(unittest.TestCase):
         self.assertIn('super.getDescriptionId().replace("item", "cast")', SRC)
         self.assertIn("serverPlayer.sendSystemMessage(Component.translatable", SRC)
         self.assertNotIn("player.displayClientMessage", SRC)
+
+    def test_clay_cast_tooltip_retains_quality_and_firing_hint(self):
+        self.assertIn("super.getDescriptionId()", CLAY)
+        self.assertIn("TooltipDisplay display,", CLAY)
+        self.assertIn("Consumer<Component> tooltip", CLAY)
+        self.assertIn("super.appendHoverText(stack, context, display, tooltip, tooltipFlag)", CLAY)
+        self.assertIn("tooltip.accept(", CLAY)
+        self.assertNotIn("tooltip.add(", CLAY)
+        self.assertIn("tooltip.overgeared.unfired_cast_hint", CLAY)
+        self.assertIn("tooltip.overgeared.tool_cast.quality", CLAY)
+        self.assertIn("tooltip.overgeared.tool_cast.type", CLAY)
 
 if __name__=="__main__":
     unittest.main()
