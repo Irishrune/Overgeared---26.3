@@ -56,7 +56,7 @@ public final class QualityBreak {
                         ? InteractionHand.MAIN_HAND
                         : InteractionHand.OFF_HAND;
 
-                player.onEquippedItemBroken(stack.getItem(), hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
+                player.onEquippedItemBroken(stack, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
             } else if (entity != null) {
                 entity.level().playSound(
                         null,
