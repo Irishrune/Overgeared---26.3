@@ -61,9 +61,6 @@ public abstract class ItemStackFabricMixin {
     private ItemAttributeModifiers overgeared$modifiedAttributes() {
         ItemStack stack = (ItemStack) (Object) this;
         ItemAttributeModifiers base = stack.getOrDefault(net.minecraft.core.component.DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
-        if (base.modifiers().isEmpty()) {
-            base = stack.getItem().getDefaultAttributeModifiers();
-        }
 
         if (BrokenHelper.isBroken(stack)) {
             // Broken tools keep only their attack speed
