@@ -1,7 +1,6 @@
 package net.stirdrem.overgeared.networking.packet;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -19,6 +18,7 @@ import net.stirdrem.overgeared.OvergearedMod;
 import net.stirdrem.overgeared.block.custom.BaseSmithingAnvilBlock;
 import net.stirdrem.overgeared.block.entity.BaseSmithingAnvilBlockEntity;
 import net.stirdrem.overgeared.util.ModTags;
+import net.stirdrem.overgeared.sound.ModSounds;
 import net.stirdrem.overgeared.util.ParticleUtils;
 
 public record PacketSendCounterC2SPacket(
@@ -79,12 +79,15 @@ public record PacketSendCounterC2SPacket(
             anvilBE.increaseForgingProgress(level, pos, state);
             ParticleUtils.spawnAnvilParticles(level, pos);
 
+            // Wire sound identifiers remain for compatibility with the client
+            // payload, but the server uses its registered forging sounds.
+            // A spoofed client cannot trigger an arbitrary registry sound here.
             if (anvilBE.getHitsRemaining() == 1) {
                 if (anvilBE.isFailedResult()) {
                     level.playSound(
                             null,
                             pos,
-                            BuiltInRegistries.SOUND_EVENT.getValue(payload.failedSound),
+                            ModSounds.FORGING_FAILED.get(),
                             SoundSource.BLOCKS,
                             1f,
                             1f
@@ -93,7 +96,7 @@ public record PacketSendCounterC2SPacket(
                     level.playSound(
                             null,
                             pos,
-                            BuiltInRegistries.SOUND_EVENT.getValue(payload.completeSound),
+                            ModSounds.FORGING_COMPLETE.get(),
                             SoundSource.BLOCKS,
                             1f,
                             1f
@@ -103,7 +106,7 @@ public record PacketSendCounterC2SPacket(
                 level.playSound(
                         null,
                         pos,
-                        BuiltInRegistries.SOUND_EVENT.getValue(payload.hitSound),
+                        ModSounds.ANVIL_HIT.get(),
                         SoundSource.BLOCKS,
                         1f,
                         1f
