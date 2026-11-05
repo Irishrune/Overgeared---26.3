@@ -3,13 +3,15 @@ package net.stirdrem.overgeared.recipe;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.crafting.*;
 import net.stirdrem.overgeared.components.ModComponents;
 
 /** Preserve Overgeared's component handling on a 26.3 cooking recipe. */
-public final class NBTKeepingSmeltingRecipe extends SmeltingRecipe {
+public final class NBTKeepingSmeltingRecipe extends AbstractCookingRecipe {
     public NBTKeepingSmeltingRecipe(Recipe.CommonInfo commonInfo, AbstractCookingRecipe.CookingBookInfo bookInfo,
             Ingredient ingredient, ItemStackTemplate result, float experience, int cookingTime) {
         super(commonInfo, bookInfo, ingredient, result, experience, cookingTime);
@@ -21,6 +23,28 @@ public final class NBTKeepingSmeltingRecipe extends SmeltingRecipe {
         output.applyComponents(input.getItem(0).getComponentsPatch());
         
         return output;
+    }
+
+    // Keep these custom serializers while retaining the vanilla furnace
+    // recipe category. The 26.3 concrete SmeltingRecipe serializer is no longer
+    // covariant with a subclass-specific recipe serializer.
+    @Override
+    public RecipeType<? extends AbstractCookingRecipe> getType() {
+        return RecipeType.SMELTING;
+    }
+
+    @Override
+    protected Item furnaceIcon() {
+        return Items.FURNACE;
+    }
+
+    @Override
+    public RecipeBookCategory recipeBookCategory() {
+        return switch (category()) {
+            case BLOCKS -> RecipeBookCategories.FURNACE_BLOCKS;
+            case FOOD -> RecipeBookCategories.FURNACE_FOOD;
+            case MISC -> RecipeBookCategories.FURNACE_MISC;
+        };
     }
 
     @Override
