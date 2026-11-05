@@ -15,6 +15,10 @@ def add_progression(out, root):
         'type':'minecraft:crafting_shaped', 'category':'misc', 'pattern':['DDD','DBD',' S '],
         'key':{'D':'minecraft:diamond','B':'overgeared:empty_blueprint','S':'overgeared:steel_ingot'},
         'result':{'id':'overgeared:diamond_upgrade_smithing_template','count':1}})
+    put('advancement','recipes/diamond_upgrade_smithing_template',{'parent':'minecraft:recipes/root',
+        'criteria':{'has_steel':{'trigger':'minecraft:inventory_changed',
+                               'conditions':{'items':[{'items':'overgeared:steel_ingot'}]}}},
+        'requirements':[['has_steel']], 'rewards':{'recipes':['overgeared:diamond_upgrade_smithing_template']}})
     traits = {t:[] for t in ('balanced','heavy','sturdy','vitality')}
     for material in ('stone','copper','iron','golden','steel'):
         ns = 'overgeared' if material in ('copper','steel') else 'minecraft'

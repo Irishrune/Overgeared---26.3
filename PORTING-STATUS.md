@@ -2,7 +2,17 @@
 
 Work remains in [draft PR #1](https://github.com/Irishrune/Overgeared---26.3/pull/1). `main` is unchanged. The reports below this section describe historical states, not the current compiler status.
 
-## Verified
+## Advanced smithing 0.3.0
+
+Implementation commit `b52f6ce323ad9a040c97baa8411ac9c27661e354` passed [run 42091096461](https://github.com/Irishrune/Overgeared---26.3/actions/runs/42091096461): 144 Python checks, independent Java/resource checks, the Fabric build, all 28 required server tests and client game tests. The final template-recipe unlock and documentation follow-up are checked in the latest PR run.
+
+Armor blueprints now use the tool progression and can advance to Masterwork. Four-strike Iron Smithing Anvil treatments support standard/flawless/failure outcomes, copy from heads/blades into equipment, and carry through steel-to-diamond-to-netherite upgrades. The template is craftable with five diamonds, an empty blueprint and a steel ingot. Stone anvils remain capped at Well and cannot treat items. Casting is unchanged.
+
+New server tests cover actual treatment consumption and unchanged failed items, stone/diamond/netherite restrictions, invalid/repeated strike reports and mid-session input replacement, non-stacking attributes, Vitality equip/unequip health behavior, blueprint caps and advancement, component save/network round trips, enchantment/name/creator preservation and percentage wear during upgrades. Client tests exercise real right-click sequences for all-Perfect, mixed Good/Perfect and a Miss. Timing positions are deterministic in the treatment tests, while input, classification, packets and server crafting are real.
+
+Manual two-player latency/ownership, broad survival balancing and platform-specific graphics remain acceptance work. README documents recipes, costs, tradeoffs, retry rules and the new progression configuration keys that also enable this in existing worlds.
+
+## Earlier verified port
 
 The `0.2.0` optional-blacksmithing changes are described in README: vanilla recipes restored, craftable anvils, furnace facing, working quality attributes, explicit bonuses/messages and inherited quality name colors. New server tests exercise real stack stats, assembly/name colors, all copper forging recipes, anvil crafting/diagnostics and quality data synchronization. Client tests also exercise direct copper-plate hammering and actual rendered-tooltip content. Check the latest PR run for their result; the older run below verifies the earlier port only.
 

@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_steel": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "overgeared:steel_ingot"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_steel"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "overgeared:diamond_upgrade_smithing_template"
+    ]
+  }
+}

@@ -2,7 +2,7 @@
 
 This repository ports [Overgeared](https://github.com/phuccom000/Overgeared) to Minecraft **Fabric 26.3** with **Java 25**.
 
-**Status (November 5, 2026):** The Fabric build, dedicated-server game tests, and client startup/workstation-screen tests pass. The development JAR and screenshots are available from the [verified Actions run](https://github.com/Irishrune/Overgeared---26.3/actions/runs/42033479804). Changes are in [draft PR #1](https://github.com/Irishrune/Overgeared---26.3/pull/1). See [verification and remaining manual checks](PORTING-STATUS.md); older phase reports are historical.
+**Status (November 5, 2026):** The Fabric build, dedicated-server game tests, and client startup/workstation-screen tests pass. The development JAR and screenshots are available from the [verified Actions run](https://github.com/Irishrune/Overgeared---26.3/actions/runs/42091096461). Changes are in [draft PR #1](https://github.com/Irishrune/Overgeared---26.3/pull/1). See [verification and remaining manual checks](PORTING-STATUS.md); older phase reports are historical.
 
 ## Advanced smithing (0.3.0)
 
@@ -55,7 +55,7 @@ Default quality effects:
 | Perfect | Purple | +20% | +10% | +10% |
 | Masterwork | Gold | +30% | +15% | +15% |
 
-Tooltips show the effective configured quality bonuses, attribute changes and remaining durability. Existing worlds retain their saved durability/mining settings; new defaults do not overwrite custom configuration. Armor and damage percentages scale each item's own contribution, so armor pieces do not multiply one another's bonuses. Server datapack attribute settings synchronize to clients. Attack speed and armor toughness are unchanged.
+Tooltips show the effective configured quality bonuses, attribute changes and remaining durability. Existing worlds retain their saved durability/mining settings; new defaults do not overwrite custom configuration. Armor and damage percentages scale each item's own contribution, so armor pieces do not multiply one another's bonuses. Server datapack attribute settings synchronize to clients. Forging quality does not change attack speed or armor toughness; treatments can change attack speed.
 
 Quality and name colors carry through finished-part assembly. Unquenched or unpolished parts still lose quality when assembled. Blueprint quality limits still apply; the stone anvil caps quality at Well, and higher grades require the iron anvil and suitable blueprints. A perfect timing hit alone does not guarantee a Perfect finished item.
 
