@@ -76,7 +76,7 @@ public class KnappingResourceReloadListener extends LegacyJsonResourceReloadList
                     Identifier soundId =
                             Identifier.tryParse(GsonHelper.getAsString(obj, "sound"));
 
-                    sound = BuiltInRegistries.SOUND_EVENT.get(soundId);
+                    sound = BuiltInRegistries.SOUND_EVENT.getValue(soundId);
 
                     if (sound == null) {
                         OvergearedMod.LOGGER.warn(
@@ -92,7 +92,7 @@ public class KnappingResourceReloadListener extends LegacyJsonResourceReloadList
                     Identifier itemId =
                             Identifier.tryParse(GsonHelper.getAsString(obj, "item"));
 
-                    Item item = BuiltInRegistries.ITEM.get(itemId);
+                    Item item = BuiltInRegistries.ITEM.getValue(itemId);
 
                     if (item == null) {
                         OvergearedMod.LOGGER.warn(
