@@ -50,7 +50,7 @@ public class DeferredRegister<R> {
 
     public <T extends R> DeferredHolder<R, T> register(String name, Function<Identifier, ? extends T> factory) {
         if (registered) {
-            throw new IllegalStateException("Cannot add entry " + name + " to " + registryKey.location() + " after it was registered");
+            throw new IllegalStateException("Cannot add entry " + name + " to " + registryKey.identifier() + " after it was registered");
         }
         Identifier id = Identifier.fromNamespaceAndPath(namespace, name);
         DeferredHolder<R, T> holder = createHolder(ResourceKey.create(registryKey, id));
@@ -67,7 +67,7 @@ public class DeferredRegister<R> {
     /** Hands the collected entries to the loader. Call once, during mod construction. */
     public void register() {
         if (registered) {
-            throw new IllegalStateException("Register " + registryKey.location() + " was already registered");
+            throw new IllegalStateException("Register " + registryKey.identifier() + " was already registered");
         }
         registered = true;
         Services.PLATFORM.register(this);
