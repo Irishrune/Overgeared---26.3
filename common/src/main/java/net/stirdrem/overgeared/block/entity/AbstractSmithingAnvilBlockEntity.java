@@ -186,6 +186,18 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
         }
     }
 
+    /**
+     * The server releases anvil ownership/minigame tracking before removing
+     * this block entity. The base class handles dropping its custom inventory.
+     */
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        if (level != null && !level.isClientSide()) {
+            ModEvents.resetMinigameForAnvil(level, pos);
+        }
+        super.preRemoveSideEffects(pos, state);
+    }
+
     @Override
     public void increaseForgingProgress(Level pLevel, BlockPos pPos, BlockState pState) {
         Optional<ForgingRecipe> recipe = getCurrentRecipe();
