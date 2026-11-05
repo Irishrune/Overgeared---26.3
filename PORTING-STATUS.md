@@ -1,3 +1,17 @@
+# Current status — Phase 26 (2026-11-04)
+
+**Still not a playable Minecraft Fabric 26.3 mod.** All changes remain in draft pull request [#1](https://github.com/Irishrune/Overgeared---26.3/pull/1); no changes to `main` or any actual Minecraft world.
+
+- **Verified Java 25 CI, source SHA `7376b132da1b0dbba863b7bf00cc786d1d6e93ae`: 98/98 source tests pass; full `:fabric:compileJava` reports 512 errors.** This is down from 619 at the start of phases 23–26 and from 780 on the old baseline. The mod still fails to compile.
+- Phase 25 uses server-side `Prediction.SERVER_ONLY` for fletching material returns, grinding conversions, polishing and arrow tipping; uses `SwingAnimation.DEFAULT`, event hand equipment slot, and the updated sound event holder types. Forge ownership sync now uses `CompoundTag.store/read` plus `UUIDUtil.CODEC` and null-checked owner IDs. The limited-crafting rule still checks the recipe-book `RecipeHolder.id()` against the current server level's game rules.
+- Phase 26 updates fired and unfired casting molds to the `InteractionResult` item-use contract and `TooltipDisplay`/`Consumer<Component>` tooltips. It retains insertion of cast materials, retrieval of contents, forged-quality/type/amount hints, and server-only item drops. Both item source files currently have **zero reported javac errors**.
+- New test modules `port-tests/test_phase25_forging_and_fletching.py` and `port-tests/test_phase26_tool_cast_item.py` cover those source invariants.
+- **Not yet demonstrated:** launched client/server, valid 26.3 assets and recipes, actual hand-forging and cast interaction in-world, multiplayer session sync, or clean all-project Java compilation. Many renderers, screens, projectile classes, advancement triggers and Mixins still require migration.
+
+Verified CI: https://github.com/Irishrune/Overgeared---26.3/actions/runs/41963174905
+
+---
+
 # Current status — Phases 23–25 (2026-11-04)
 
 **Overgeared is not yet buildable on Fabric 26.3 and must NOT be installed in the Forever World.** Ongoing draft PR: https://github.com/Irishrune/Overgeared---26.3/pull/1
