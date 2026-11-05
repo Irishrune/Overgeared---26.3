@@ -79,12 +79,12 @@ public class RockInteractionReloadListener extends LegacyJsonResourceReloadListe
     private void parseAndAddRockInteraction(Identifier id, JsonObject obj) {
         // ---------- BLOCKS ----------
         Identifier inputId = Identifier.parse(GsonHelper.getAsString(obj, "input_block"));
-        Block inputBlock = BuiltInRegistries.BLOCK.get(inputId);
+        Block inputBlock = BuiltInRegistries.BLOCK.getValue(inputId);
         if (inputBlock == Blocks.AIR)
             throw new JsonParseException("Unknown input_block '" + inputId + "'");
 
         Identifier resultId = Identifier.parse(GsonHelper.getAsString(obj, "result_block"));
-        Block resultBlock = BuiltInRegistries.BLOCK.get(resultId);
+        Block resultBlock = BuiltInRegistries.BLOCK.getValue(resultId);
         if (resultBlock == Blocks.AIR)
             throw new JsonParseException("Unknown result_block '" + resultId + "'");
 
@@ -113,7 +113,7 @@ public class RockInteractionReloadListener extends LegacyJsonResourceReloadListe
             }
 
             Identifier dropId = Identifier.parse(GsonHelper.getAsString(toolObj, "drop_item"));
-            Item dropItem = BuiltInRegistries.ITEM.get(dropId);
+            Item dropItem = BuiltInRegistries.ITEM.getValue(dropId);
             if (dropItem == Items.AIR)
                 throw new JsonParseException("Unknown drop_item '" + dropId + "'");
 
