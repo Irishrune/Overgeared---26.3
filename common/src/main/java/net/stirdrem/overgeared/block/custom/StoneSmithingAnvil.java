@@ -62,10 +62,6 @@ public class StoneSmithingAnvil extends AbstractSmithingAnvil {
         super(AnvilTier.STONE, properties);
     }
 
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return null;
-    }
 
 
     @Override
