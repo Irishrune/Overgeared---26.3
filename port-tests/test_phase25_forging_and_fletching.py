@@ -30,7 +30,7 @@ class ForgeQuenchingAndFletchingTests(unittest.TestCase):
         self.assertIn("player.swing(event.getHand(), SwingAnimation.DEFAULT, true)", INTERACTIONS)
         self.assertIn("event.getHand() == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND", INTERACTIONS)
         self.assertIn("SoundEvents.ITEM_BREAK.value()", INTERACTIONS)
-        self.assertIn("SoundEvents.STONE_HIT.value()", INTERACTIONS)
+        self.assertIn("SoundEvents.STONE_HIT, SoundSource.BLOCKS", INTERACTIONS)
         for variable in ("polishedItem", "cooledIngot", "resultArrow"):
             self.assertIn(f"player.drop({variable}, false, Prediction.SERVER_ONLY)", INTERACTIONS)
         self.assertNotIn("InteractionResult.sidedSuccess(", INTERACTIONS)
