@@ -1,4 +1,29 @@
-# Current status — Phase 26 (2026-11-04)
+# Current status — Fabric build and server tests pass (2026-11-05)
+
+Work remains in [draft PR #1](https://github.com/Irishrune/Overgeared---26.3/pull/1). `main` is unchanged. The reports below this section describe historical states, not the current compiler status.
+
+## Verified
+
+- At `a81dd06bc0efad8a9f60b1ef9d4a11c387ad125c`, [GitHub Actions](https://github.com/Irishrune/Overgeared---26.3/actions/runs/42027539206) passed all 144 Python source tests, the isolated Java checks, generated-resource checks, and `:fabric:build :fabric:runGameTest` under Java 25.
+- The server test suite covers world data loading; forging codecs, displays and flags; hammering and assembly; casting; inventory and ownership persistence; copper/steel mining progression; mixed-material cast save/network round trips; transferred quality/creator components without replacing result-item defaults; recipe-book settings; disabled vanilla shortcuts; and independent tipping-use counts when brewing.
+- Restored 473 generated recipe, advancement, tag and loot definitions from the original providers. `tools/generate_263_gameplay.py --check` checks reproducibility. Item and arrow models are checked by `tools/generate_263_assets.py --check`.
+
+## Port changes
+
+The remaining compilation migrations cover client screens and rendering, recipe-book displays/settings, item-break and sweep callbacks, potion/brewing hooks, and ingredient codecs. Recipe and reload-listener resolution now respects 26.3's registry/component binding lifecycle. Anvil previews are synchronized from the server. Quality and custom material component patches transfer to finished parts while keeping the finished item's own defaults.
+
+The original quantities, blueprint rules, quality mechanics, quenching, polishing, casting mold reuse, vanilla shortcut restrictions, and registry identifiers are retained. Mixed-material casting is covered; a new modular mixed-material equipment system remains future work after the core port is playable.
+
+## Remaining verification and scope
+
+- Client startup and automated opening/rendering of all eight workstation screens are in progress. The client test checks anvil previews and recipe-book toggling and captures screenshots. This section will be updated with the result.
+- A real two-player session, minigame timing under network latency, and a complete survival progression are not yet verified.
+- Legacy JEI/EMI/Sable integrations are excluded from the Fabric build. NeoForge is historical source only. Copper armor currently uses the existing vanilla equipment texture fallback; its old custom silhouette is not enabled.
+- Use disposable worlds for development testing. No existing user world has been opened or migrated.
+
+---
+
+# Historical status — Phase 26 (2026-11-04)
 
 **Still not a playable Minecraft Fabric 26.3 mod.** All changes remain in draft pull request [#1](https://github.com/Irishrune/Overgeared---26.3/pull/1); no changes to `main` or any actual Minecraft world.
 

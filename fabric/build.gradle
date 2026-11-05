@@ -17,7 +17,7 @@ repositories {
 
 // Compile upstream common sources in the Fabric module without copying or dropping
 // the original sources. NeoForge remains present as historical source but is NOT
-// part of the active Gradle build. These Java files still need 26.3 API migration.
+// part of the active Gradle build.
 sourceSets {
     main {
         java.srcDir(rootProject.file('common/src/main/java'))

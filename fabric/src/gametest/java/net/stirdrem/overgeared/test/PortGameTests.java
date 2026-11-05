@@ -105,6 +105,35 @@ public class PortGameTests {
         test.succeed();
     }
 
+    @GameTest public void alloyFurnacesConsumeFuelAndPreserveQuantities(GameTestHelper test) {
+        BlockPos pos = new BlockPos(1, 2, 1);
+        test.setBlock(pos.below(), Blocks.STONE);
+        test.setBlock(pos, ModBlocks.ALLOY_FURNACE.get());
+        var alloy = test.getBlockEntity(pos, net.stirdrem.overgeared.block.entity.AlloySmelterBlockEntity.class);
+        for (int i = 0; i < 3; i++) alloy.setItem(i, new ItemStack(Items.IRON_INGOT, 2));
+        alloy.setItem(3, new ItemStack(Items.COAL, 2));
+        alloy.setItem(4, new ItemStack(Items.LAVA_BUCKET));
+        for (int tick = 0; tick < 250; tick++) {
+            net.stirdrem.overgeared.block.entity.AlloySmelterBlockEntity.tick(test.getLevel(), alloy.getBlockPos(), alloy.getBlockState(), alloy);
+        }
+        check(alloy.getItem(5).is(ModItems.CRUDE_STEEL.get()) && alloy.getItem(5).getCount() == 4, "Alloy furnace output quantity changed");
+        for (int i = 0; i < 4; i++) check(alloy.getItem(i).getCount() == 1, "Alloy furnace consumed the wrong input count");
+        check(alloy.getItem(4).is(Items.BUCKET), "Alloy furnace lost the fuel container");
+
+        test.setBlock(pos, ModBlocks.NETHER_ALLOY_FURNACE.get());
+        var nether = test.getBlockEntity(pos, net.stirdrem.overgeared.block.entity.NetherAlloySmelterBlockEntity.class);
+        for (int i = 0; i < 3; i++) nether.setItem(i, new ItemStack(Items.IRON_INGOT));
+        nether.setItem(3, new ItemStack(Items.COAL));
+        nether.setItem(9, new ItemStack(Items.LAVA_BUCKET));
+        for (int tick = 0; tick < 150; tick++) {
+            net.stirdrem.overgeared.block.entity.NetherAlloySmelterBlockEntity.tick(test.getLevel(), nether.getBlockPos(), nether.getBlockState(), nether);
+        }
+        check(nether.getItem(10).is(ModItems.CRUDE_STEEL.get()) && nether.getItem(10).getCount() == 4, "Nether alloy furnace output quantity changed");
+        for (int i = 0; i < 9; i++) check(nether.getItem(i).isEmpty(), "Nether alloy furnace did not consume its ingredients");
+        check(nether.getItem(9).is(Items.BUCKET), "Nether alloy furnace lost the fuel container");
+        test.succeed();
+    }
+
     @GameTest public void anvilInventoryAndOwnershipSurviveSave(GameTestHelper test) {
         BlockPos pos = new BlockPos(1, 2, 1);
         test.setBlock(pos.below(), Blocks.STONE);
