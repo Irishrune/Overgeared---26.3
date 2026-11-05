@@ -6,6 +6,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.item.ItemStack;
 import net.stirdrem.overgeared.ForgingQuality;
 import net.stirdrem.overgeared.components.CastData;
@@ -22,7 +23,7 @@ public class ModCommands {
                 // /setforgingquality <quality>
                 dispatcher.register(
                                 Commands.literal("setforgingquality")
-                                                .requires(source -> source.hasPermission(2)) // Requires operator level
+                                                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) // Requires operator level
                                                                                              // 2 or higher
                                                 .then(Commands.argument("quality", StringArgumentType.string())
                                                                 .suggests((c, b) -> {
@@ -64,7 +65,7 @@ public class ModCommands {
                 // /givecast <toolType> [quality] [material]
                 dispatcher.register(
                                 Commands.literal("givecast")
-                                                .requires(source -> source.hasPermission(2)) // Requires operator level
+                                                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) // Requires operator level
                                                                                              // 2 or higher
                                                 .then(Commands.argument("toolType", StringArgumentType.string())
                                                                 .then(Commands.argument("quality",

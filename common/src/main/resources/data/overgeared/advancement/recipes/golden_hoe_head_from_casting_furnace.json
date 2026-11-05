@@ -1,0 +1,34 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_cast": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "#overgeared:tool_casts"
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipes": [
+          "overgeared:golden_hoe_head_from_casting_furnace"
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_cast",
+      "has_the_recipe"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "overgeared:golden_hoe_head_from_casting_furnace"
+    ]
+  }
+}

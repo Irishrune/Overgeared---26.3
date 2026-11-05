@@ -8,11 +8,9 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.component.DataComponentMap;
-import net.minecraft.core.component.DataComponentType;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.world.item.ArmorItem;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.crafting.*;
@@ -32,6 +30,22 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
     public final int width;
     public final int height;
     private final String group;
+    private String treatment = "";
+    public String treatment() { return treatment; }
+    public boolean isTreatment() { return !treatment.isEmpty(); }
+    public ForgingRecipe withTreatment(String value) {
+        if (!value.isEmpty() && !net.stirdrem.overgeared.util.SmithingTreatments.TRAITS.contains(value))
+            throw new IllegalArgumentException("Unknown smithing treatment: " + value);
+        treatment = value;
+        return this;
+    }
+    public ItemStack treatmentInput(RecipeInput input) {
+        for (int i = 0; i < Math.min(9, input.size()); i++)
+            if (net.stirdrem.overgeared.util.SmithingTreatments.canTreat(input.getItem(i), treatment))
+                return input.getItem(i);
+        return ItemStack.EMPTY;
+    }
+
     private final Set<String> blueprintTypes;
     private final String tier;
     private final List<String> pattern;
@@ -75,6 +89,24 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
         this.tab = tab;
     }
 
+    @Override public boolean isSpecial() { return false; }
+    @Override public PlacementInfo placementInfo() { return PlacementInfo.createFromOptionals(getIngredients()); }
+    @Override public RecipeBookCategory recipeBookCategory() {
+        return switch (tab) {
+            case TOOL_HEADS -> ForgingRecipeCategories.TOOLS;
+            case ARMORS -> ForgingRecipeCategories.ARMORS;
+            case MISC -> ForgingRecipeCategories.MISC;
+        };
+    }
+    @Override public java.util.List<net.minecraft.world.item.crafting.display.RecipeDisplay> display() {
+        var inputs = getIngredients().stream().map(i -> i.map(Ingredient::display)
+            .orElse(net.minecraft.world.item.crafting.display.SlotDisplay.Empty.INSTANCE)).toList();
+        var grid = new net.minecraft.world.item.crafting.display.ShapedCraftingRecipeDisplay(width, height, inputs,
+            new net.minecraft.world.item.crafting.display.SlotDisplay.ItemStackSlotDisplay(result),
+            new net.minecraft.world.item.crafting.display.SlotDisplay.ItemSlotDisplay(net.stirdrem.overgeared.block.ModBlocks.SMITHING_ANVIL.get().asItem()));
+        return List.of(new ForgingRecipeDisplay(grid, tier));
+    }
+
     public static Optional<ForgingRecipe> findBestMatch(Level world, RecipeInput RecipeInput) {
         return findBestMatchHolder(world, RecipeInput).map(RecipeHolder::value);
     }
@@ -111,7 +143,7 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
 
     @Override
     public boolean matches(RecipeInput recipeInput, Level world) {
-        return findMatchOrigin(recipeInput) >= 0;
+        return findMatchOrigin(recipeInput) >= 0 && (!isTreatment() || !treatmentInput(recipeInput).isEmpty());
     }
 
     /**
@@ -119,9 +151,17 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
      * The anvil input also contains a blueprint slot at index 11.
      */
     private int findMatchOrigin(RecipeInput input) {
+        return findMatchOrigin(input, true);
+    }
+
+    public boolean matchesIngredients(RecipeInput input) {
+        return findMatchOrigin(input, false) >= 0;
+    }
+
+    private int findMatchOrigin(RecipeInput input, boolean includeBlueprint) {
         if (input.size() <= BLUEPRINT_SLOT || width < 1 || width > 3 || height < 1 || height > 3)
             return -1;
-        if (!checkBlueprint(input)) return -1;
+        if (includeBlueprint && !checkBlueprint(input)) return -1;
         for (int y = 0; y <= 3 - height; y++) {
             for (int x = 0; x <= 3 - width; x++) {
                 if (matchesPattern(input, x, y) && checkSurroundingBlanks(input, x, y)) {
@@ -170,6 +210,8 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
 
     @Override
     public ItemStack assemble(RecipeInput recipeInput) {
+        if (isTreatment()) return net.stirdrem.overgeared.util.SmithingTreatments.apply(treatmentInput(recipeInput),
+                new net.stirdrem.overgeared.components.TreatmentData(treatment, false));
         ItemStack output = result.create();
         int origin = findMatchOrigin(recipeInput);
         // Preserve the old preview behavior for nonmatching inputs, but do not
@@ -302,7 +344,9 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
     }
 
     public boolean needQuenching() {
-        return needQuenching;
+        // Item components are bound only after the recipe registry has loaded.
+        var equippable = result.create().get(DataComponents.EQUIPPABLE);
+        return needQuenching && !(equippable != null && equippable.slot().isArmor());
     }
 
     public List<String> getPattern() {
@@ -457,7 +501,7 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
                         buf -> ForgingBookCategory.findByName(buf.readUtf())
                 );
 
-        public static final MapCodec<ForgingRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+        private static final MapCodec<ForgingRecipe> BASE_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                     Codec.BOOL.optionalFieldOf("requires_blueprint", false).forGetter(ForgingRecipe::requiresBlueprint),
                     BLUEPRINT_TYPES_CODEC.optionalFieldOf("blueprint", Set.of()).forGetter(ForgingRecipe::getBlueprintTypes),
                     Codec.STRING.optionalFieldOf("tier", AnvilTier.IRON.getDisplayName()).forGetter(ForgingRecipe::getAnvilTier),
@@ -505,18 +549,17 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
                     }
                 }
 
-                // Default quenching based on whether result is armor
-                boolean actualNeedQuenching = needQuenching;
-                if (result.create().getItem() instanceof ArmorItem) {
-                    actualNeedQuenching = false;
-                }
-
                 return new ForgingRecipe("", requiresBlueprint, new LinkedHashSet<>(blueprintTypes), tier,
                         new ArrayList<>(pattern), new LinkedHashMap<>(key), ingredients,
-                        result, failedResult, hammering, hasQuality, needsMinigame, hasPolishing, actualNeedQuenching,
+                        result, failedResult, hammering, hasQuality, needsMinigame, hasPolishing, needQuenching,
                         showNotification, minimumQuality, qualityDifficulty, width, height, tab);
             }));
 
+
+        public static final MapCodec<ForgingRecipe> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
+                BASE_CODEC.forGetter((ForgingRecipe r) -> r),
+                Codec.STRING.optionalFieldOf("treatment", "").forGetter(ForgingRecipe::treatment)
+        ).apply(i, ForgingRecipe::withTreatment));
 
         public static final StreamCodec<RegistryFriendlyByteBuf, ForgingRecipe> STREAM_CODEC = new StreamCodec<>() {
                 @Override
@@ -544,7 +587,7 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
                     return new ForgingRecipe(group, requiresBlueprint, blueprintTypes, tier,
                             List.of(), Map.of(), ingredients,
                             result, failedResult, hammering, hasQuality, needsMinigame, hasPolishing,
-                            needQuenching, showNotification, minimumQuality, qualityDifficulty, width, height, tab);
+                            needQuenching, showNotification, minimumQuality, qualityDifficulty, width, height, tab).withTreatment(buffer.readUtf());
                 }
 
                 @Override
@@ -568,6 +611,7 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
                     buffer.writeBoolean(recipe.failedResult.isPresent());
                     recipe.failedResult.ifPresent(template -> ItemStackTemplate.STREAM_CODEC.encode(buffer, template));
                     TAB_STREAM_CODEC.encode(buffer, recipe.tab);
+                    buffer.writeUtf(recipe.treatment);
                 }
             };
 
@@ -605,7 +649,13 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
 
             @Override
             public <T> DataResult<Pair<ForgingIngredient, T>> decode(DynamicOps<T> ops, T input) {
-                return Ingredient.CODEC.parse(ops, input).map(ing -> Pair.of(
+                // Accept the new explicit ingredient field and old datapack item/tag objects.
+                T encoded = ops.get(input, "ingredient").result().orElse(input);
+                var item = ops.get(input, "item").flatMap(ops::getStringValue).result();
+                var tag = ops.get(input, "tag").flatMap(ops::getStringValue).result();
+                if (item.isPresent()) encoded = ops.createString(item.get());
+                else if (tag.isPresent()) encoded = ops.createString("#" + tag.get());
+                return Ingredient.CODEC.parse(ops, encoded).map(ing -> Pair.of(
                         new ForgingIngredient(Optional.of(ing), getBool(ops, input, "requires_heated"), getBool(ops, input, "transfer_nbt")),
                         input
                 ));
@@ -616,10 +666,8 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
                 if (input.ingredient().isEmpty()) {
                     return DataResult.error(() -> "Blank slots must be represented by spaces in the forging pattern");
                 }
-                return Ingredient.CODEC.encode(input.ingredient().get(), ops, prefix).flatMap(encoded -> {
-                    if (!input.requiresHeated && !input.transferNBT) return DataResult.success(encoded);
-
-                    DataResult<T> result = DataResult.success(encoded);
+                return Ingredient.CODEC.encodeStart(ops, input.ingredient().get()).flatMap(encoded -> {
+                    DataResult<T> result = ops.mergeToMap(prefix, ops.createString("ingredient"), encoded);
                     if (input.requiresHeated) {
                         result = result.flatMap(m -> ops.mergeToMap(m, ops.createString("requires_heated"), ops.createBoolean(true)));
                     }
@@ -652,25 +700,11 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
 
 
     public static void mergeComponents(ItemStack target, ItemStack source) {
-        DataComponentMap sourceComponents = source.getComponents();
-        DataComponentMap targetComponents = target.getComponents();
-
-        for (DataComponentType<?> type : sourceComponents.keySet()) {
-            // If target already has component → overwrite
-            if (targetComponents.has(type)) {
-                target.remove(type);
-            }
-
-            // Copy component value
-            copyComponent(target, source, type);
-        }
-    }
-
-    private static <T> void copyComponent(ItemStack target, ItemStack source, DataComponentType<T> type) {
-        T value = source.get(type);
-        if (value != null) {
-            target.set(type, value);
-        }
+        // Transfer per-stack data (quality, creator, enchantments and custom
+        // material components), while retaining the result item's own defaults.
+        // Copying getComponents() also copies the source item's model, name,
+        // stack size and attributes, which can turn a forged tool into its head.
+        target.applyComponents(source.getComponentsPatch());
     }
 
 }

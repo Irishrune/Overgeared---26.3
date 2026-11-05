@@ -1,0 +1,12 @@
+{
+  "type": "overgeared:crafting_shapeless",
+  "category": "equipment",
+  "result": {
+    "id": "minecraft:iron_shovel",
+    "count": 1
+  },
+  "ingredients": [
+    "overgeared:iron_shovel_head",
+    "minecraft:stick"
+  ]
+}

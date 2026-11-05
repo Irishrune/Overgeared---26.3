@@ -13,7 +13,6 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -24,14 +23,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Fallable;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -52,7 +52,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 public abstract class AbstractSmithingAnvil extends BaseSmithingAnvilBlock implements Fallable {
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
     protected static final int HAMMER_SOUND_DURATION_TICKS = 6; // adjust to match your sound
 
     protected static ForgingQuality quality = null;
@@ -79,21 +79,6 @@ public abstract class AbstractSmithingAnvil extends BaseSmithingAnvilBlock imple
 
     public RenderShape getRenderShape(BlockState pState) {
         return RenderShape.MODEL;
-    }
-
-    @Override
-    public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pIsMoving) {
-        if (pState.getBlock() != pNewState.getBlock()) {
-            BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
-            if (blockEntity instanceof AbstractSmithingAnvilBlockEntity) {
-                ((AbstractSmithingAnvilBlockEntity) blockEntity).drops();
-
-                if (!pLevel.isClientSide()) {
-                    ModEvents.resetMinigameForAnvil(pLevel, pPos);
-                }
-            }
-        }
-        super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
     }
 
     @Override
@@ -131,7 +116,7 @@ public abstract class AbstractSmithingAnvil extends BaseSmithingAnvilBlock imple
         }
 
         Menus.openMenu(player, anvil, pos);
-        return InteractionResult.sidedSuccess(level.isClientSide());
+        return InteractionResult.SUCCESS;
     }
 
     public TagKey<Item> hammerTag() {
@@ -139,48 +124,37 @@ public abstract class AbstractSmithingAnvil extends BaseSmithingAnvilBlock imple
     }
 
     @Override
-    public ItemInteractionResult useItemOn(ItemStack held, BlockState state, Level level, BlockPos pos,
+    protected InteractionResult useItemOn(ItemStack held, BlockState state, Level level, BlockPos pos,
                                            Player player, InteractionHand hand, BlockHitResult hit) {
         boolean isHammer = held.is(hammerTag());
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof AbstractSmithingAnvilBlockEntity anvil)) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
 
         // CLIENT-SIDE: Handle minigame hit processing
         if (level.isClientSide()) {
             if (player.isCrouching()) {
-                return ItemInteractionResult.SUCCESS; // Let server handle opening menu
+                return InteractionResult.SUCCESS; // Let server handle opening menu
             }
 
-            if (anvil.hasRecipe() && isHammer) {
-                // Check if this is our anvil
-
-                BlockPos ourAnvilPos = AnvilMinigameEvents.getAnvilPos(player.getUUID());
-                if (ourAnvilPos != null && !pos.equals(ourAnvilPos)) {
-                    // Not our anvil - don't process hit
-                    return ItemInteractionResult.SUCCESS;
-                }
-                // Check if minigame is visible (quality recipe with minigame enabled)
-                if (AnvilMinigameEvents.isVisible()) {
-                    // Process the hit client-side to update minigame state
-                    AnvilMinigameEvents.resetPopUps();
-                    String hitQuality = AnvilMinigameEvents.handleHit();
-                    // Send the quality result to server
-                    PacketDistributor.sendToServer(new PacketSendCounterC2SPacket(hitQuality, pos,
-                            ModSounds.ANVIL_HIT.getId(), ModSounds.FORGING_COMPLETE.getId(), ModSounds.FORGING_FAILED.getId()));
-                    // Intentional second speed-up: handleHit() already applies one. The minigame's
-                    // difficulty is tuned around 2x the configured arrowSpeedIncrease per hit.
-                    AnvilMinigameEvents.speedUp();
-                    return ItemInteractionResult.SUCCESS;
-                } else if (!anvil.hasQuality() && !anvil.needsMinigame()) {
-                    return ItemInteractionResult.SUCCESS;
-                } else if (!ServerConfig.ENABLE_MINIGAME.get()) {
-                    // Minigame disabled - allow direct hammering
-                    return ItemInteractionResult.SUCCESS;
-                }
+            // 26.3 clients have recipe displays, not the server recipe database.
+            // The server-authorized session is the client hit gate; hasRecipe()
+            // always returns false here. The hit packet still validates ownership,
+            // range, hammer and current recipe on the server.
+            if (isHammer && AnvilMinigameEvents.minigameStarted
+                    && AnvilMinigameEvents.isVisible()
+                    && pos.equals(AnvilMinigameEvents.getAnvilPos(player.getUUID()))) {
+                AnvilMinigameEvents.resetPopUps();
+                String hitQuality = AnvilMinigameEvents.handleHit();
+                PacketDistributor.sendToServer(new PacketSendCounterC2SPacket(hitQuality, pos,
+                        ModSounds.ANVIL_HIT.getId(), ModSounds.FORGING_COMPLETE.getId(), ModSounds.FORGING_FAILED.getId(),
+                        AnvilMinigameEvents.getPerfectHits(), AnvilMinigameEvents.getGoodHits(), AnvilMinigameEvents.getMissedHits()));
+                // Intentional second speed-up: handleHit() already applies one. The minigame's
+                // difficulty is tuned around 2x the configured arrowSpeedIncrease per hit.
+                AnvilMinigameEvents.speedUp();
             }
-            return ItemInteractionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         }
 
         // SERVER-SIDE handling
@@ -200,7 +174,7 @@ public abstract class AbstractSmithingAnvil extends BaseSmithingAnvilBlock imple
                                         .withStyle(ChatFormatting.RED),
                                 true
                         );
-                        return ItemInteractionResult.FAIL;
+                        return InteractionResult.FAIL;
                     }
                 }
             }
@@ -217,7 +191,7 @@ public abstract class AbstractSmithingAnvil extends BaseSmithingAnvilBlock imple
                                     .withStyle(ChatFormatting.RED),
                             true
                     );
-                    return ItemInteractionResult.FAIL;
+                    return InteractionResult.FAIL;
                 }
                 if (!anvil.hasQuality() && !anvil.needsMinigame()) {
                     // Check minigame visibility from server tracking
@@ -226,12 +200,16 @@ public abstract class AbstractSmithingAnvil extends BaseSmithingAnvilBlock imple
                         // Player hasn't started minigame yet, open menu instead
                         ModItemInteractEvents.hideMinigame((ServerPlayer) player);
                         Menus.openMenu(player, anvil, pos);
-                        return ItemInteractionResult.sidedSuccess(level.isClientSide());
+                        return InteractionResult.SUCCESS;
                     }
 
                     // Process the hammer hit
+                    anvil.setPlayer(player);
+                    int remaining = Math.max(0, anvil.getRequiredProgress() - anvil.getProgress() - 1);
                     held.hurtAndBreak(1, player, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
                     anvil.increaseForgingProgress(level, pos, state);
+                    ((ServerPlayer) player).sendSystemMessage(Component.translatable("message.overgeared.hammer_progress",
+                            remaining), true);
                     ParticleUtils.spawnAnvilParticles(level, pos);
 
                     // Play appropriate sound based on hits remaining
@@ -245,7 +223,7 @@ public abstract class AbstractSmithingAnvil extends BaseSmithingAnvilBlock imple
                         level.playSound(null, pos, ModSounds.ANVIL_HIT.get(), SoundSource.BLOCKS, 1f, 1f);
                     }
                 }
-                return ItemInteractionResult.sidedSuccess(level.isClientSide());
+                return InteractionResult.SUCCESS;
             }
 
             // Has recipe but can't hammer - open menu
@@ -256,7 +234,7 @@ public abstract class AbstractSmithingAnvil extends BaseSmithingAnvilBlock imple
         }
 
         Menus.openMenu(player, anvil, pos);
-        return ItemInteractionResult.sidedSuccess(level.isClientSide());
+        return InteractionResult.SUCCESS;
     }
 
     @Nullable
@@ -264,7 +242,7 @@ public abstract class AbstractSmithingAnvil extends BaseSmithingAnvilBlock imple
     public abstract BlockEntity newBlockEntity(BlockPos pPos, BlockState pState);
 
     @Override
-    protected void onExplosionHit(BlockState state, Level level, BlockPos pos, Explosion explosion,
+    protected void onExplosionHit(BlockState state, ServerLevel level, BlockPos pos, Explosion explosion,
                                   BiConsumer<ItemStack, BlockPos> dropConsumer) {
         // Runs before the block is removed on both loaders
         if (!level.isClientSide() && explosion.getBlockInteraction() != Explosion.BlockInteraction.KEEP
@@ -320,9 +298,12 @@ public abstract class AbstractSmithingAnvil extends BaseSmithingAnvilBlock imple
     }
 
     @Override
-    public BlockState updateShape(BlockState pState, Direction pDirection, BlockState pNeighborState, LevelAccessor
-            pLevel, BlockPos pPos, BlockPos pNeighborPos) {
-        pLevel.scheduleTick(pPos, this, 2);
-        return super.updateShape(pState, pDirection, pNeighborState, pLevel, pPos, pNeighborPos);
+    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks,
+                                    BlockPos pos, Direction directionToNeighbour, BlockPos neighbourPos,
+                                    BlockState neighbourState, RandomSource random) {
+        // Preserve the original fast falling-anvil check after a neighbour changes.
+        ticks.scheduleTick(pos, this, 2);
+        return super.updateShape(state, level, ticks, pos, directionToNeighbour,
+                neighbourPos, neighbourState, random);
     }
 }

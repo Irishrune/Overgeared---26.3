@@ -11,15 +11,16 @@ import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.stirdrem.overgeared.OvergearedMod;
 
-public class CopperHelmet<T extends Entity> extends EntityModel<T> {
+public class CopperHelmet<T extends EntityRenderState> extends EntityModel<T> {
   // This layer location should be baked with EntityRendererProvider.Context in the entity renderer and passed into this model's constructor
   public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(OvergearedMod.loc("copper_helmet"), "main");
   public final ModelPart Head;
 
   public CopperHelmet(ModelPart root) {
+    super(root);
     this.Head = root.getChild("Head");
   }
 
@@ -50,13 +51,4 @@ public class CopperHelmet<T extends Entity> extends EntityModel<T> {
     return LayerDefinition.create(meshdefinition, 64, 32);
   }
 
-  @Override
-  public void setupAnim(Entity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-
-  }
-
-  @Override
-  public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay, int color) {
-    Head.render(poseStack, buffer, packedLight, packedOverlay, color);
-  }
 }

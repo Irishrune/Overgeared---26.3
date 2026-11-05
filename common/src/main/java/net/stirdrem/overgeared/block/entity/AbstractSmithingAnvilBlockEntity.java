@@ -2,9 +2,11 @@ package net.stirdrem.overgeared.block.entity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -15,11 +17,12 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ShieldItem;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -55,10 +58,7 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
     protected int maxProgress;
     protected int hitRemains;
     protected long busyUntilGameTime = 0L;
-    protected UUID ownerUUID = null;
-    protected Map<BlockPos, UUID> occupiedAnvils = Collections.synchronizedMap(new HashMap<>());
     protected AnvilTier anvilTier;
-    protected long sessionStartTime = 0L; // optional, for timeout logic
     protected ItemStack failedResult;
     protected ForgingRecipe lastRecipe = null;
     protected ItemStack lastBlueprint = ItemStack.EMPTY;
@@ -67,6 +67,42 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
     protected AbstractSmithingAnvil anvilBlock;
     protected static final int BLUEPRINT_SLOT = 11;
     protected boolean hasHeatedItems = false;
+    private ItemStack recipePreview = ItemStack.EMPTY;
+    private int perfectStrikes, goodStrikes, missedStrikes;
+    private ForgingQuality strikeQuality;
+    private List<ItemStack> treatmentInputs = List.of();
+
+    public ForgingQuality getStrikeQuality() { return strikeQuality == null ? anvilBlock.getQuality() : strikeQuality; }
+
+    public boolean recordStrikeCounts(int perfect, int good, int missed) {
+        if (!isMinigameOn() || !hasRecipe() || perfect < perfectStrikes || good < goodStrikes || missed < missedStrikes
+                || (long)perfect + good + missed != (long)progress + 1
+                || perfect - perfectStrikes + good - goodStrikes + missed - missedStrikes != 1) return false;
+        if (!treatmentInputs.isEmpty()) for (int i = 0; i < 9; i++)
+            if (!ItemStack.matches(treatmentInputs.get(i), itemHandler.getStackInSlot(i))) return false;
+        perfectStrikes = perfect; goodStrikes = good; missedStrikes = missed;
+        strikeQuality = ForgingQuality.fromString(net.stirdrem.overgeared.util.ForgingScore.rank(perfect, good, missed,
+                ServerConfig.PERFECT_QUALITY_SCORE.get(), ServerConfig.EXPERT_QUALITY_SCORE.get(), ServerConfig.WELL_QUALITY_SCORE.get()));
+        return true;
+    }
+
+
+    public ItemStack getRecipePreview() {
+        return recipePreview.copy();
+    }
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = super.getUpdateTag(registries);
+        // Clients no longer have the server recipe database. Send a display-only
+        // preview alongside the inventory, never as a collectible container slot.
+        if (hasRecipe()) {
+            ItemStack preview = getCurrentRecipe().orElseThrow().assemble(new RecipeWrapper(itemHandler));
+            if (!preview.isEmpty()) tag.store("overgeared_preview", ItemStack.CODEC,
+                    registries.createSerializationContext(NbtOps.INSTANCE), preview);
+        }
+        return tag;
+    }
 
     // Define slot indices
     private static final int[] TOP_SLOTS = new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8}; // input grid
@@ -151,67 +187,55 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        tag.putInt("hitRemains", hitRemains);
-        tag.putInt("progress", progress);
-        tag.putInt("maxProgress", maxProgress);
-        tag.put("inventory", itemHandler.serializeNBT(registries));
+    protected void saveAdditional(ValueOutput output) {
+        // The base class saves the inventory and owner. Do not duplicate
+        // these fields in the subclass: this previously shadowed ownerUUID.
+        super.saveAdditional(output);
+        output.putInt("hitRemains", hitRemains);
+        output.putInt("progress", progress);
+        output.putInt("maxProgress", maxProgress);
 
-        if (ownerUUID != null) {
-            tag.putUUID("ownerUUID", ownerUUID);
-            tag.putLong("sessionStartTime", sessionStartTime);
-        }
-
-        // Save occupiedAnvils
-        ListTag occupiedList = new ListTag();
+        ValueOutput.ValueOutputList occupiedList = output.childrenList("occupiedAnvils");
         for (Map.Entry<BlockPos, UUID> entry : occupiedAnvils.entrySet()) {
-            CompoundTag entryTag = new CompoundTag();
+            ValueOutput child = occupiedList.addChild();
             BlockPos pos = entry.getKey();
-            entryTag.putInt("x", pos.getX());
-            entryTag.putInt("y", pos.getY());
-            entryTag.putInt("z", pos.getZ());
-            entryTag.putUUID("uuid", entry.getValue());
-            occupiedList.add(entryTag);
+            child.putInt("x", pos.getX());
+            child.putInt("y", pos.getY());
+            child.putInt("z", pos.getZ());
+            child.store("uuid", UUIDUtil.CODEC, entry.getValue());
         }
-        tag.put("occupiedAnvils", occupiedList);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        if (tag.contains("inventory")) {
-            itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
-        }
-        if (tag.contains("hitRemains")) {
-            hitRemains = tag.getInt("hitRemains");
-        }
-        if (tag.contains("progress")) {
-            progress = tag.getInt("progress");
-        }
-        if (tag.contains("maxProgress")) {
-            maxProgress = tag.getInt("maxProgress");
-        }
-        if (tag.hasUUID("ownerUUID")) {
-            ownerUUID = tag.getUUID("ownerUUID");
-            sessionStartTime = tag.getLong("sessionStartTime");
-        } else {
-            ownerUUID = null;
-        }
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        recipePreview = input.read("overgeared_preview", ItemStack.CODEC).orElse(ItemStack.EMPTY);
+        hitRemains = input.getIntOr("hitRemains", 0);
+        progress = input.getIntOr("progress", 0);
+        maxProgress = input.getIntOr("maxProgress", 0);
 
-        // Load occupiedAnvils
         occupiedAnvils.clear();
-        if (tag.contains("occupiedAnvils", CompoundTag.TAG_LIST)) {
-            ListTag occupiedList = tag.getList("occupiedAnvils", CompoundTag.TAG_COMPOUND);
-            for (int i = 0; i < occupiedList.size(); i++) {
-                CompoundTag entryTag = occupiedList.getCompound(i);
-                int x = entryTag.getInt("x");
-                int y = entryTag.getInt("y");
-                int z = entryTag.getInt("z");
-                UUID uuid = entryTag.getUUID("uuid");
-                occupiedAnvils.put(new BlockPos(x, y, z), uuid);
+        for (ValueInput child : input.childrenListOrEmpty("occupiedAnvils")) {
+            UUID occupant = child.read("uuid", UUIDUtil.CODEC).orElse(null);
+            if (occupant != null) {
+                occupiedAnvils.put(new BlockPos(
+                        child.getIntOr("x", 0),
+                        child.getIntOr("y", 0),
+                        child.getIntOr("z", 0)), occupant);
             }
         }
+    }
+
+    /**
+     * The server releases anvil ownership/minigame tracking before removing
+     * this block entity. The base class handles dropping its custom inventory.
+     */
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        if (level != null && !level.isClientSide()) {
+            ModEvents.resetMinigameForAnvil(level, pos);
+        }
+        super.preRemoveSideEffects(pos, state);
     }
 
     @Override
@@ -235,6 +259,9 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
     public void resetProgress(BaseSmithingAnvilBlock anvilBlock) {
         progress = 0;
         maxProgress = 0;
+        perfectStrikes = goodStrikes = missedStrikes = 0;
+        strikeQuality = null;
+        treatmentInputs = List.of();
         lastRecipe = null;
         if (level != null && !level.isClientSide()) {
             if (minigameOn)
@@ -252,6 +279,21 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
             return;
 
         ForgingRecipe recipe = recipeOptional.get();
+        if (recipe.isTreatment()) {
+            if (anvilTier != AnvilTier.IRON || !ServerConfig.ENABLE_MINIGAME.get() || !isMinigameOn()) return;
+            var outcome = net.stirdrem.overgeared.util.SmithingTreatments.outcome(recipe.treatment(),
+                    perfectStrikes, goodStrikes, missedStrikes, recipe.getHammeringRequired());
+            if (perfectStrikes + goodStrikes + missedStrikes != recipe.getHammeringRequired()) return;
+            if (!itemHandler.getStackInSlot(OUTPUT_SLOT).isEmpty()) return;
+            ItemStack original = recipe.treatmentInput(new RecipeWrapper(itemHandler));
+            ItemStack treated = net.stirdrem.overgeared.util.SmithingTreatments.apply(original, outcome);
+            for (int i = 0; i < 9; i++) itemHandler.extractItem(i, 1, false);
+            itemHandler.setStackInSlot(OUTPUT_SLOT, treated);
+            if (player instanceof ServerPlayer smith) smith.sendSystemMessage(Component.translatable(
+                    outcome == null ? "message.overgeared.treatment_failed" : outcome.flawless()
+                            ? "message.overgeared.treatment_flawless" : "message.overgeared.treatment_success"), true);
+            return;
+        }
         // Use the actual matched ingredients before consuming them. The old
         // getResultItem() path discarded transfer_nbt/component data entirely.
         ItemStack result = recipe.assemble(new RecipeWrapper(itemHandler));
@@ -300,7 +342,9 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
                             ModAdvancementTriggers.FORGING_QUALITY.get()
                                     .trigger(serverPlayer, quality.getDisplayName());
                         }
-                        if (!(result.getItem() instanceof ArmorItem) &&
+                        var equippable = result.get(DataComponents.EQUIPPABLE);
+                        boolean isArmor = equippable != null && equippable.slot().isArmor();
+                        if (!isArmor &&
                                 !(result.getItem() instanceof ShieldItem) &&
                                 recipe.hasPolishing()) {
                             result.set(ModComponents.POLISHED.get(), false);
@@ -394,7 +438,8 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
         int usesToLevel = BlueprintItem.getUsesToNextLevel(blueprint);
 
         // Attempt to read the ForgingQuality from result
-        ForgingQuality resultQuality = anvilBlock.getQuality();
+        ForgingQuality resultQuality = getStrikeQuality();
+        if (resultQuality == null) return;
         if (!ServerConfig.EXPERT_ABOVE_INCREASE_BLUEPRINT.get()
                 || resultQuality.ordinal() >= ForgingQuality.EXPERT.ordinal()) {
             uses += switch (resultQuality) {
@@ -441,6 +486,8 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
             return false;
 
         ForgingRecipe recipe = recipeOptional.get();
+        if (recipe.isTreatment()) return anvilTier == AnvilTier.IRON && ServerConfig.ENABLE_MINIGAME.get()
+                && itemHandler.getStackInSlot(OUTPUT_SLOT).isEmpty();
         AnvilTier requiredTier = AnvilTier.fromDisplayName(recipe.getAnvilTier());
 
         // Safely skip if tier is invalid
@@ -459,6 +506,8 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
             return false;
 
         ForgingRecipe recipe = recipeOptional.get();
+        if (recipe.isTreatment()) return anvilTier == AnvilTier.IRON && ServerConfig.ENABLE_MINIGAME.get()
+                && itemHandler.getStackInSlot(OUTPUT_SLOT).isEmpty();
 
         // Tier check
         AnvilTier requiredTier = AnvilTier.fromDisplayName(recipe.getAnvilTier());
@@ -492,6 +541,34 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
         ItemStack resultStack = recipe.getResultItem(level.registryAccess());
         return canInsertItemIntoOutputSlot(resultStack, recipe)
                 && canInsertAmountIntoOutputSlot(resultStack.getCount());
+    }
+
+    /** Server-only diagnosis: clients do not possess the recipe database. */
+    public Component forgingProblem() {
+        var current = getCurrentRecipe();
+        if (current.isPresent() && current.get().isTreatment()) {
+            if (anvilTier != AnvilTier.IRON) return Component.translatable("message.overgeared.treatment_iron");
+            if (!ServerConfig.ENABLE_MINIGAME.get()) return Component.translatable("message.overgeared.treatment_timing");
+        }
+        for (int i = 0; i < 9; i++) {
+            String name = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(itemHandler.getStackInSlot(i).getItem()).getPath();
+            if (name.startsWith("diamond_") || name.startsWith("netherite_")) return Component.translatable("message.overgeared.treatment_upgrade");
+        }
+        RecipeWrapper input = new RecipeWrapper(itemHandler);
+        var candidates = net.stirdrem.overgeared.recipe.RecipeLookups.all(level, net.stirdrem.overgeared.recipe.ModRecipeTypes.FORGING.get()).stream()
+                .map(RecipeHolder::value).filter(recipe -> recipe.matchesIngredients(input)).toList();
+        if (candidates.isEmpty()) return Component.translatable("message.overgeared.ingredients_mismatch");
+        var matching = candidates.stream().filter(recipe -> recipe.matches(input, level)).findFirst();
+        if (matching.isEmpty()) {
+            String types = String.join(", ", candidates.getFirst().getBlueprintTypes());
+            return Component.translatable(itemHandler.getStackInSlot(BLUEPRINT_SLOT).isEmpty()
+                    ? "message.overgeared.missing_blueprint" : "message.overgeared.wrong_blueprint", types);
+        }
+        AnvilTier required = AnvilTier.fromDisplayName(matching.get().getAnvilTier());
+        if (required != null && !anvilTier.isAtLeast(required)) {
+            return Component.translatable("message.overgeared.anvil_tier", Component.translatable(required.getLang()));
+        }
+        return Component.translatable("message.overgeared.output_blocked");
     }
 
     @Override
@@ -662,29 +739,9 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        CompoundTag tag = super.getUpdateTag(registries);
-        tag.put("inventory", itemHandler.serializeNBT(registries));
-        tag.putInt("progress", progress);
-        tag.putInt("maxProgress", maxProgress);
-        tag.putInt("hitRemains", hitRemains);
-        return tag;
-    }
-
-    // Overrides NeoForge's IBlockEntityExtension#handleUpdateTag; vanilla only calls loadWithComponents.
-    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
-        this.loadWithComponents(tag, registries);
-        if (tag.contains("progress")) {
-            this.progress = tag.getInt("progress");
-        }
-        if (tag.contains("maxProgress")) {
-            this.maxProgress = tag.getInt("maxProgress");
-        }
-        if (tag.contains("hitRemains")) {
-            this.hitRemains = tag.getInt("hitRemains");
-        }
-    }
+    // BaseSmithingAnvilBlockEntity#getUpdateTag uses saveWithoutMetadata,
+    // which invokes this subclass's saveAdditional and includes progress and
+    // the 3x3 inventory in chunk-load/update packets.
 
     protected boolean matchesRecipeExactly(ForgingRecipe recipe) {
         // Create a wrapper for recipe matching
@@ -700,7 +757,7 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
 
     @Override
     protected ForgingQuality determineForgingQuality() {
-        ForgingQuality quality = anvilBlock.getQuality();
+        ForgingQuality quality = getStrikeQuality();
         if (quality == null)
             return ForgingQuality.WELL;
         Optional<ForgingRecipe> recipeOptional = getCurrentRecipe();
@@ -739,36 +796,8 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
                     return ForgingQuality.POOR;
                 case "expert":
                     return ForgingQuality.EXPERT;
-                case "perfect": {
-                    Random random = new Random();
-
-                    // Check if any crafting slot contains a Master-quality ingredient
-                    boolean hasMasterIngredient = false;
-                    for (int i = 0; i < this.itemHandler.getSlots(); i++) {
-                        if (i == OUTPUT_SLOT || i == BLUEPRINT_SLOT)
-                            continue; // skip output + blueprint
-                        ItemStack stack = this.itemHandler.getStackInSlot(i);
-                        ForgingQuality ingQuality = stack.get(ModComponents.FORGING_QUALITY.get());
-                        if (!stack.isEmpty() && ingQuality == ForgingQuality.MASTER) {
-                            hasMasterIngredient = true;
-                            break;
-                        }
-                    }
-
-                    // Normal Master roll from config
-                    boolean masterRoll = ServerConfig.MASTER_QUALITY_CHANCE.get() != 0
-                            && random.nextFloat() < ServerConfig.MASTER_QUALITY_CHANCE.get();
-
-                    // Ingredient-based boost
-                    boolean ingredientMasterRoll = hasMasterIngredient
-                            && random.nextFloat() < ServerConfig.MASTER_FROM_INGREDIENT_CHANCE.get();
-
-                    if ("master".equals(blueprintQualityStr) || masterRoll || ingredientMasterRoll) {
-                        return ForgingQuality.MASTER;
-                    } else {
-                        return ForgingQuality.PERFECT;
-                    }
-                }
+                case "perfect":
+                    return "master".equals(blueprintQualityStr) ? ForgingQuality.MASTER : ForgingQuality.PERFECT;
                 case "master":
                     return ForgingQuality.MASTER;
                 default:
@@ -781,41 +810,11 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
     @Override
     protected ForgingQuality determineForgingQualityNoBlueprint() {
         // Get quality from anvil or use default if null
-        ForgingQuality quality = anvilBlock.getQuality();
+        ForgingQuality quality = getStrikeQuality();
         if (quality == null) {
             return ForgingQuality.POOR; // Default quality
         }
-        if (quality.equals(ForgingQuality.PERFECT)) {
-            Random random = new Random();
-
-            // 🔹 Check if any crafting slot contains a Master-quality ingredient
-            boolean hasMasterIngredient = false;
-            for (int i = 0; i < this.itemHandler.getSlots(); i++) {
-                if (i == OUTPUT_SLOT || i == BLUEPRINT_SLOT)
-                    continue; // skip output + blueprint
-                ItemStack stack = this.itemHandler.getStackInSlot(i);
-                ForgingQuality ingQuality = stack.get(ModComponents.FORGING_QUALITY.get());
-                if (!stack.isEmpty() && ingQuality == ForgingQuality.MASTER) {
-                    hasMasterIngredient = true;
-                    break;
-                }
-            }
-
-            // Normal Master roll from config
-            boolean masterRoll = ServerConfig.MASTER_QUALITY_CHANCE.get() != 0
-                    && random.nextFloat() < ServerConfig.MASTER_QUALITY_CHANCE.get();
-
-            // Ingredient-based boost
-            boolean ingredientMasterRoll = hasMasterIngredient
-                    && random.nextFloat() < ServerConfig.MASTER_FROM_INGREDIENT_CHANCE.get();
-
-            if (masterRoll || ingredientMasterRoll) {
-                return ForgingQuality.MASTER;
-            } else {
-                return ForgingQuality.PERFECT;
-            }
-        } else
-            return quality;
+        return quality;
     }
 
     @Override
@@ -837,11 +836,6 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
 
     @Override
     public ForgingQuality qualityFromBlueprint() {
-        ForgingQuality quality = anvilBlock.getQuality();
-        if (quality == null) {
-            return ForgingQuality.NONE; // fallback when global quality is missing
-        }
-
         Optional<ForgingRecipe> recipeOptional = getCurrentRecipe();
         if (recipeOptional.isEmpty()) {
             return ForgingQuality.POOR; // no recipe = base fallback
@@ -858,12 +852,9 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
                     ForgingQuality.PERFECT, ForgingQuality.MASTER);
 
             // Missing or invalid blueprint → cap quality
-            String poor = quality.equals(ForgingQuality.POOR)
-                    ? ForgingQuality.POOR.getDisplayName()
-                    : ForgingQuality.NONE.getDisplayName();
             BlueprintData blueprintData = blueprint.get(ModComponents.BLUEPRINT_DATA.get());
             if (blueprint.isEmpty() || blueprintData == null) {
-                return ForgingQuality.fromString(poor);
+                return ForgingQuality.NONE;
             }
 
             String bpQuality = blueprintData.quality().toLowerCase(java.util.Locale.ROOT);
@@ -983,6 +974,15 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
 
     @Override
     public void setMinigameOn(boolean value) {
+        if (value && !this.minigameOn) {
+            perfectStrikes = goodStrikes = missedStrikes = 0;
+            strikeQuality = null;
+            if (getCurrentRecipe().map(ForgingRecipe::isTreatment).orElse(false)) {
+                List<ItemStack> snapshot = new ArrayList<>();
+                for (int i = 0; i < 9; i++) snapshot.add(itemHandler.getStackInSlot(i).copy());
+                treatmentInputs = List.copyOf(snapshot);
+            }
+        }
         this.minigameOn = value;
         setChanged(); // mark dirty for save
     }

@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "overgeared:copper_chestplate",
+    "minecraft:iron_chestplate",
+    "minecraft:golden_chestplate",
+    "overgeared:steel_chestplate"
+  ]
+}

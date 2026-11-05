@@ -22,6 +22,7 @@ public final class ModPackets {
     }
 
     public static final List<Packet<?>> CLIENTBOUND = List.of(
+            new Packet<>(QualityDefinitionsS2CPacket.TYPE, QualityDefinitionsS2CPacket.STREAM_CODEC, QualityDefinitionsS2CPacket::handle),
             new Packet<>(HideMinigameS2CPacket.TYPE, HideMinigameS2CPacket.STREAM_CODEC, HideMinigameS2CPacket::handle),
             new Packet<>(MinigameSetStartedS2CPacket.TYPE, MinigameSetStartedS2CPacket.STREAM_CODEC, MinigameSetStartedS2CPacket::handle),
             new Packet<>(MinigameSyncS2CPacket.TYPE, MinigameSyncS2CPacket.STREAM_CODEC, MinigameSyncS2CPacket::handle),

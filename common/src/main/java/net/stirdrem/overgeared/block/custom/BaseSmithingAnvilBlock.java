@@ -1,6 +1,8 @@
 package net.stirdrem.overgeared.block.custom;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.Containers;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -12,17 +14,16 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.stirdrem.overgeared.ForgingQuality;
 import net.stirdrem.overgeared.block.entity.BaseSmithingAnvilBlockEntity;
-import org.joml.Random;
-import org.joml.Vector3f;
+import net.minecraft.util.RandomSource;
 
 public abstract class BaseSmithingAnvilBlock extends BaseEntityBlock {
 
-    public static final DirectionProperty FACING =
+    public static final EnumProperty<Direction> FACING =
             BlockStateProperties.HORIZONTAL_FACING;
 
     protected BaseSmithingAnvilBlock(Properties properties) {
@@ -52,28 +53,21 @@ public abstract class BaseSmithingAnvilBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
+    /**
+     * Minecraft 26.3 removes the block entity before this callback; inventory
+     * drops happen in BaseSmithingAnvilBlockEntity.preRemoveSideEffects.
+     * Only update adjacent hoppers/comparators here.
+     */
     @Override
-    public void onRemove(
-            BlockState oldState,
-            Level level,
-            BlockPos pos,
-            BlockState newState,
-            boolean moving
-    ) {
-        if (oldState.getBlock() != newState.getBlock()) {
-            BlockEntity be = level.getBlockEntity(pos);
-
-            if (be instanceof BaseSmithingAnvilBlockEntity anvil) {
-                anvil.drops();
-            }
-        }
-
-        super.onRemove(oldState, level, pos, newState, moving);
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level,
+                                               BlockPos pos, boolean movedByPiston) {
+        super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
+        Containers.updateNeighboursAfterDestroy(state, level, pos);
     }
 
     protected void spawnHitParticles(Level level, BlockPos pos) {
         if (level instanceof ServerLevel server) {
-            Random random = new Random();
+            RandomSource random = server.getRandom();
 
             for (int i = 0; i < 6; i++) {
                 double x = pos.getX() + 0.5 + random.nextFloat() - 0.5;
@@ -81,10 +75,7 @@ public abstract class BaseSmithingAnvilBlock extends BaseEntityBlock {
                 double z = pos.getZ() + 0.5 + random.nextFloat() - 0.5;
 
                 server.sendParticles(
-                        new DustParticleOptions(
-                                new Vector3f(1, 0.5f, 0),
-                                1
-                        ),
+                        new DustParticleOptions(0xFF8000, 1.0F),
                         x, y, z,
                         1,
                         0, 0.1, 0,

@@ -37,6 +37,10 @@ public class ModComponents {
                     .networkSynchronized(BlueprintData.STREAM_CODEC)
                     .build());
 
+    public static final Supplier<DataComponentType<TreatmentData>> TREATMENT =
+            COMPONENTS.register("treatment", () -> DataComponentType.<TreatmentData>builder()
+                    .persistent(TreatmentData.CODEC).networkSynchronized(TreatmentData.STREAM_CODEC).build());
+
     // Forging quality stored on crafted items (sword, armor, etc.) - stored as enum
     public static final Supplier<DataComponentType<ForgingQuality>> FORGING_QUALITY =
             COMPONENTS.register("forging_quality", () -> DataComponentType.<ForgingQuality>builder()

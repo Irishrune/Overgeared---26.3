@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "result": {
+    "id": "overgeared:drafting_table",
+    "count": 1
+  },
+  "ingredients": [
+    "minecraft:crafting_table",
+    "overgeared:empty_blueprint"
+  ]
+}

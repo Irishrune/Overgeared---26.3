@@ -46,8 +46,10 @@ public final class OvergearedMod {
         ModBlockEntities.register();
         ModEntities.register();
         ModMenuTypes.register();
+        net.stirdrem.overgeared.recipe.ForgingRecipeCategories.register();
         ModRecipeTypes.register();
         ModRecipeSerializers.register();
+        net.stirdrem.overgeared.recipe.DragonBreathBrewingRecipe.register();
         ModCreativeModeTabs.register();
         ModAdvancementTriggers.register();
 

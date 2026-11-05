@@ -12,7 +12,7 @@ public final class RegistryKeyRegistrationTest {
         var items=DeferredRegister.createItems("overgeared");
         var visited=new ArrayList<String>();
         var steel=items.registerWithKey("steel_ingot", key -> {
-            visited.add(key.location().path());
+            visited.add(key.identifier().path());
             return new Item(new Item.Properties().setId(key));
         });
         var handle=items.registerSimpleItem("handle");

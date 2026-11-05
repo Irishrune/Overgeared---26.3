@@ -1,0 +1,28 @@
+{
+  "type": "overgeared:forging",
+  "category": "misc",
+  "treatment": "heavy",
+  "pattern": [
+    "EM"
+  ],
+  "key": {
+    "E": {
+      "ingredient": "minecraft:iron_sword",
+      "transfer_nbt": true
+    },
+    "M": {
+      "ingredient": "minecraft:iron_ingot"
+    }
+  },
+  "result": {
+    "id": "minecraft:iron_sword",
+    "count": 1
+  },
+  "hammering": 4,
+  "tier": "iron",
+  "has_quality": false,
+  "needs_minigame": true,
+  "has_polishing": false,
+  "need_quenching": false,
+  "quality_difficulty": "expert"
+}

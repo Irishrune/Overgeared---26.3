@@ -1,3 +1,114 @@
+# Current status — Fabric build, server and client tests pass (2026-11-05)
+
+Work remains in [draft PR #1](https://github.com/Irishrune/Overgeared---26.3/pull/1). `main` is unchanged. The reports below this section describe historical states, not the current compiler status.
+
+## Advanced smithing 0.3.0
+
+Implementation commit `b52f6ce323ad9a040c97baa8411ac9c27661e354` passed [run 42091096461](https://github.com/Irishrune/Overgeared---26.3/actions/runs/42091096461): 144 Python checks, independent Java/resource checks, the Fabric build, all 28 required server tests and client game tests. The final template-recipe unlock and documentation follow-up are checked in the latest PR run.
+
+Armor blueprints now use the tool progression and can advance to Masterwork. Four-strike Iron Smithing Anvil treatments support standard/flawless/failure outcomes, copy from heads/blades into equipment, and carry through steel-to-diamond-to-netherite upgrades. The template is craftable with five diamonds, an empty blueprint and a steel ingot. Stone anvils remain capped at Well and cannot treat items. Casting is unchanged.
+
+New server tests cover actual treatment consumption and unchanged failed items, stone/diamond/netherite restrictions, invalid/repeated strike reports and mid-session input replacement, non-stacking attributes, Vitality equip/unequip health behavior, blueprint caps and advancement, component save/network round trips, enchantment/name/creator preservation and percentage wear during upgrades. Client tests exercise real right-click sequences for all-Perfect, mixed Good/Perfect and a Miss. Timing positions are deterministic in the treatment tests, while input, classification, packets and server crafting are real.
+
+Manual two-player latency/ownership, broad survival balancing and platform-specific graphics remain acceptance work. README documents recipes, costs, tradeoffs, retry rules and the new progression configuration keys that also enable this in existing worlds.
+
+## Earlier verified port
+
+The `0.2.0` optional-blacksmithing changes are described in README: vanilla recipes restored, craftable anvils, furnace facing, working quality attributes, explicit bonuses/messages and inherited quality name colors. New server tests exercise real stack stats, assembly/name colors, all copper forging recipes, anvil crafting/diagnostics and quality data synchronization. Client tests also exercise direct copper-plate hammering and actual rendered-tooltip content. Check the latest PR run for their result; the older run below verifies the earlier port only.
+
+- At `7fe49cab7e8fc6dd845b8b695751e77a0403d1d9`, [GitHub Actions](https://github.com/Irishrune/Overgeared---26.3/actions/runs/42033479804) passed all 144 Python source tests, the isolated Java checks, generated-resource checks, `:fabric:build :fabric:runGameTest`, and `:fabric:runClientGameTest` under Java 25. The server reports 14 required tests passing (13 Overgeared tests plus the framework's test).
+- The server test suite covers world data loading; forging codecs, displays and flags; hammering and assembly; casting; inventory and ownership persistence; copper/steel mining progression; mixed-material cast save/network round trips; transferred quality/creator components without replacing result-item defaults; recipe-book settings; disabled vanilla shortcuts; independent tipping-use counts when brewing; and both alloy furnaces' fuel-container handling and exact input/output quantities.
+- Client tests create and render a world, receive unlocked forging recipes, and open all four anvil screens, both alloy furnaces, the casting furnace and drafting table. Anvil output previews and recipe-book toggling pass. Screenshots are included in the client diagnostic artifact. CI uses Mesa software Vulkan rendering under Xvfb.
+- Restored 473 generated recipe, advancement, tag and loot definitions from the original providers. `tools/generate_263_gameplay.py --check` checks reproducibility. Item and arrow models are checked by `tools/generate_263_assets.py --check`.
+
+## Port changes
+
+Version `26.3-port.0.1.1` fixes player hammer clicks during the forging timer. The old client path called `hasRecipe()`, but 26.3 only keeps the recipe database on the server, so hits were never sent. Client clicks now use the server-authorized forging session and matching anvil position; the server still validates each strike. The client regression test starts forging with sneak/use input, releases sneak, and clicks three times to check server progress, hammer wear, ingredient consumption, blade output and timer completion. The earlier workstation-screen tests did not exercise this interaction.
+
+The compilation migrations cover client screens and rendering, recipe-book displays/settings, item-break and sweep callbacks, potion/brewing hooks, and ingredient codecs. Recipe and reload-listener resolution now respects 26.3's registry/component binding lifecycle. Anvil previews are synchronized from the server. Quality and custom material component patches transfer to finished parts while keeping the finished item's own defaults. Legacy text colors now include explicit alpha so workstation and configuration labels remain visible.
+
+The original quantities, blueprint rules, quality mechanics, quenching, polishing, casting mold reuse, vanilla shortcut restrictions, and registry identifiers are retained. Mixed-material casting is covered; a new modular mixed-material equipment system remains future work after the core port is playable.
+
+## Remaining verification and scope
+
+- A real two-player session, minigame timing under network latency, and a complete survival progression are not yet verified.
+- The automated client check uses software Vulkan on Linux; Windows GPU rendering, sound, every arrow/potion visual, and the interactive configuration editor still warrant manual playtesting.
+- Legacy JEI/EMI/Sable integrations are excluded from the Fabric build. NeoForge is historical source only. Copper armor currently uses the existing vanilla equipment texture fallback; its old custom silhouette is not enabled.
+- Use disposable worlds for development testing. No existing user world has been opened or migrated.
+
+---
+
+# Historical status — Phase 26 (2026-11-04)
+
+**Still not a playable Minecraft Fabric 26.3 mod.** All changes remain in draft pull request [#1](https://github.com/Irishrune/Overgeared---26.3/pull/1); no changes to `main` or any actual Minecraft world.
+
+- **Verified Java 25 CI, source SHA `7376b132da1b0dbba863b7bf00cc786d1d6e93ae`: 98/98 source tests pass; full `:fabric:compileJava` reports 512 errors.** This is down from 619 at the start of phases 23–26 and from 780 on the old baseline. The mod still fails to compile.
+- Phase 25 uses server-side `Prediction.SERVER_ONLY` for fletching material returns, grinding conversions, polishing and arrow tipping; uses `SwingAnimation.DEFAULT`, event hand equipment slot, and the updated sound event holder types. Forge ownership sync now uses `CompoundTag.store/read` plus `UUIDUtil.CODEC` and null-checked owner IDs. The limited-crafting rule still checks the recipe-book `RecipeHolder.id()` against the current server level's game rules.
+- Phase 26 updates fired and unfired casting molds to the `InteractionResult` item-use contract and `TooltipDisplay`/`Consumer<Component>` tooltips. It retains insertion of cast materials, retrieval of contents, forged-quality/type/amount hints, and server-only item drops. Both item source files currently have **zero reported javac errors**.
+- New test modules `port-tests/test_phase25_forging_and_fletching.py` and `port-tests/test_phase26_tool_cast_item.py` cover those source invariants.
+- **Not yet demonstrated:** launched client/server, valid 26.3 assets and recipes, actual hand-forging and cast interaction in-world, multiplayer session sync, or clean all-project Java compilation. Many renderers, screens, projectile classes, advancement triggers and Mixins still require migration.
+
+Verified CI: https://github.com/Irishrune/Overgeared---26.3/actions/runs/41963174905
+
+---
+
+# Current status — Phases 23–25 (2026-11-04)
+
+**Overgeared is not yet buildable on Fabric 26.3 and must NOT be installed in the Forever World.** Ongoing draft PR: https://github.com/Irishrune/Overgeared---26.3/pull/1
+
+- The Minecraft 26.3 workstation block lifecycle was migrated from removed `onRemove` callbacks to `affectNeighborsAfterRemoval` and block-entity `preRemoveSideEffects`. The casting, alloy and nether-alloy smelters retain automatic vanilla container inventory drops plus explicit stored-XP payout; custom item-handler smithing anvils drop their contents and clear minigame ownership. Updated state properties use `EnumProperty<Direction>`; the falling-anvil neighbour tick and player hammer interaction use the new block signatures.
+- Deferred registry holders use the current `Registry.get`/`getValue` and `ResourceKey.identifier()` APIs. Isolated Java registration stubs and assertions were migrated in tandem.
+- Hammer hit packet serialization now uses `Identifier.STREAM_CODEC`. On the server, a packet is rejected unless the player is within reach, currently owns an active forge minigame, and holds a smithing hammer. Sound playback uses registered server-defined sound events, not client-provided IDs. These are source-level safeguards; actual networking and multiplayer behavior still require runtime testing.
+- Forge recipes retain their armor-only quenching exemption with `EQUIPPABLE` components. Fletching potion lookup uses `Registry.getValue`. Fletching and grinding/knapping/tipping item drop and swing callbacks use 26.3 APIs; forging ownership sync uses `CompoundTag.store/read` with `UUIDUtil.CODEC`, and limited-crafting checks use `RecipeHolder.id()`.
+- Regression modules: `port-tests/test_phase23_workstation_blocks.py`, `port-tests/test_phase24_registry_and_hammer_packet.py`, `port-tests/test_phase25_forging_and_fletching.py`.
+- **Verified CI milestones:** Phase 23: **84/84** source tests passed, `:fabric:compileJava` still failed with **572** javac diagnostics; phase 24: **88/88** passed, **554** errors; subsequent phase 25 intermediate run: **92/92** passed, **537** javac errors. Phase 25's subsequent UUID-sync updates require fresh CI verification. Compilation counts represent compiler diagnostics, not distinct runtime defects.
+- Remaining: real successful build and Minecraft startup; GUI/renderer API updates, recipe-book categories, projectiles, advancements and mixins, plus end-to-end forging, saved data and dedicated-server runtime testing. Keep this draft separate from `main`.
+
+---
+
+# Current status — Phases 20–22 (2026-11-04)
+
+**This is a source migration in draft PR #1, not a runnable Fabric 26.3 mod.** Do not load it into the Forever World.
+
+- Java 25 CI compilation errors have decreased from **732** to **619** (a reduction of 113 javac diagnostics in this batch). The full Minecraft build still fails.
+- The old generic `RecipeBookMenu` menu contract was replaced by the 26.3 interface, while retaining the manual 3×3 forging grid, hammer slot, blueprint slot, and forged output slot. Recipe placement now preflights inventory before transferring resources; incomplete placements do not clear the grid. The actual minigame still requires runtime verification.
+- `ItemStackHandler`, `BaseSmithingAnvilBlockEntity` and `AbstractSmithingAnvilBlockEntity` now use 26.3 `ValueInput`/`ValueOutput` for inventory, progress, player-ownership and occupied-anvil data. Original inventory `Items`/`Slot`/`Size` and progress keys were preserved, and redundant shadowed owner/session fields were removed.
+- All seven anvil and smelter block entity registrations use Fabric's 26.3 `FabricBlockEntityTypeBuilder` with **unchanged registry IDs**.
+- The new smithing source tests live in `port-tests/test_phase20_smithing_menu.py`, `port-tests/test_phase21_smithing_persistence.py`, and `port-tests/test_phase22_block_entity_registry.py`.
+- **Verified checks:** 79/79 tests passed before the additional phase 22 regression test; this phase 22 test was corrected to support multiline `.build()` and requires latest-branch CI revalidation. The 619-error compiler result was verified before adding/correcting this final test.
+- **Not tested:** full compilation, actual client startup, dedicated-server startup, recipe-book UI, block placement/break behavior, or multiplayer forging/ownership.
+
+Key remaining work includes block interaction overrides in 26.3, renderer/UI changes, arrows, advancements, recipe-book categories, network packet APIs, and Mixins.
+
+---
+
+# Current status — Phase 19 (2026-11-04)
+
+**Fabric 26.3 port is NOT yet buildable or playable.** Draft pull request
+[#1](https://github.com/Irishrune/Overgeared---26.3/pull/1) carries the latest
+API migrations without changing `main`.
+
+- GitHub Actions with Java 25: **70 of 70 Python source regression tests pass**.
+- Real `:fabric:compileJava` still fails, but compiler errors declined from
+  **769 to 732** after this batch. These are javac diagnostic counts, not 732
+  independent gameplay bugs.
+- Fabric 26.3 extended menus, registry identifiers, crafting remainders, and
+  context-aware cooking-fuel components have been migrated at source level.
+- All three smelters use a server block-entity loot context for fuel durations,
+  retain container remainders when fuel is exhausted, drop remainders safely for
+  stacked fuel, and detect fuel components during hopper / shift-click routing.
+- Their saved inventory, burner, cooking progress, and XP fields now use
+  `ValueInput` / `ValueOutput` while preserving original field keys.
+- New source regression coverage is in
+  `port-tests/test_phase18_menu_api.py` and
+  `port-tests/test_phase19_cooking_fuel.py`.
+- **Not tested in a running client or multiplayer server.** Recipe-book
+  integration, smithing interfaces, sprites/renderers, arrows, advancement
+  triggers, Mixins, and other migrated APIs require further compilation and
+  gameplay verification. Do not load the port into the Forever World.
+
+---
+
 # Current status — Phase 9 (2026-11-03)
 
 **Source-only progress; not yet compilable/verified on Minecraft 26.3.** The live anvil craft path now calls the updated recipe assembly routine, which uses the matched forging-grid location to preserve components correctly. Malformed forge patterns are rejected; server anvil tracking uses server state; and incompatible 1.21.1 JEI/EMI/Sable adapters are excluded from the core build. The full Gradle compile remains blocked locally before compilation. See `PHASE-9-CHANGELOG.md` for tests, scope and remaining blockers.

@@ -50,7 +50,7 @@ class Phase9ForgingAndCompat(unittest.TestCase):
         external=('mezz.jei','dev.emi','dev.ryanhcode.sable','compat.sable.SableCompat')
         for base in (ROOT/'common/src/main/java',ROOT/'fabric/src/main/java'):
             for p in base.rglob('*.java'):
-                if any(f'/compat/{name}/' in str(p) for name in ('jei','emi','sable')):continue
+                if any(f'/compat/{name}/' in p.as_posix() for name in ('jei','emi','sable')):continue
                 for line in p.read_text().splitlines():
                     if not line.startswith('import '):continue
                     self.assertFalse(any(x in line for x in external), f'{p}: {line}')

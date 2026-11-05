@@ -1,0 +1,25 @@
+{
+  "type": "overgeared:forging",
+  "category": "misc",
+  "result": {
+    "id": "overgeared:steel_arrow_head",
+    "count": 1
+  },
+  "pattern": [
+    "###",
+    " ##",
+    "# #"
+  ],
+  "key": {
+    "#": {
+      "ingredient": "overgeared:steel_nugget",
+      "requires_heated": false,
+      "transfer_nbt": false
+    }
+  },
+  "hammering": 3,
+  "tier": "iron",
+  "need_quenching": false,
+  "has_polishing": false,
+  "has_quality": false
+}

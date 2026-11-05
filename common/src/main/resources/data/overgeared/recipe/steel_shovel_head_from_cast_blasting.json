@@ -1,0 +1,14 @@
+{
+  "type": "overgeared:cast_blasting",
+  "result": {
+    "id": "overgeared:steel_shovel_head",
+    "count": 1
+  },
+  "input": {
+    "steel": 9
+  },
+  "experience": 0.9,
+  "cookingtime": 75,
+  "need_polishing": true,
+  "tool_type": "shovel"
+}

@@ -1,11 +1,12 @@
 package net.stirdrem.overgeared.block.custom;
 
 import net.stirdrem.overgeared.platform.Menus;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.Containers;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -22,7 +23,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -31,9 +32,8 @@ import net.stirdrem.overgeared.block.entity.NetherAlloySmelterBlockEntity;
 import org.jetbrains.annotations.Nullable;
 
 public class NetherAlloySmelterBlock extends BaseEntityBlock {
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
-    public static final MapCodec<NetherAlloySmelterBlock> CODEC = simpleCodec(NetherAlloySmelterBlock::new);
 
     public static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 16, 16);
 
@@ -44,16 +44,12 @@ public class NetherAlloySmelterBlock extends BaseEntityBlock {
                 .setValue(LIT, false));
     }
 
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
-    }
 
     // ----- State and placement -----
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return this.defaultBlockState()
-                .setValue(FACING, context.getHorizontalDirection())
+                .setValue(FACING, context.getHorizontalDirection().getOpposite())
                 .setValue(LIT, false);
     }
 
@@ -84,15 +80,15 @@ public class NetherAlloySmelterBlock extends BaseEntityBlock {
     }
 
     // ----- Block Entity -----
+    /**
+     * Block entities are already removed when this hook runs in 26.3.
+     * BaseContainerBlockEntity drops its inventory in preRemoveSideEffects;
+     * this block only needs to notify neighboring hoppers/comparators.
+     */
     @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (state.getBlock() != newState.getBlock()) {
-            BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof NetherAlloySmelterBlockEntity be) {
-                be.drops();
-            }
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
+        super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
+        Containers.updateNeighboursAfterDestroy(state, level, pos);
     }
 
     @Override
@@ -106,7 +102,7 @@ public class NetherAlloySmelterBlock extends BaseEntityBlock {
                 throw new IllegalStateException("Container provider is missing!");
             }
         }
-        return InteractionResult.sidedSuccess(level.isClientSide());
+        return InteractionResult.SUCCESS;
     }
 
     @Nullable

@@ -1,0 +1,14 @@
+{
+  "type": "overgeared:casting",
+  "result": {
+    "id": "overgeared:golden_hoe_head",
+    "count": 1
+  },
+  "input": {
+    "gold": 18
+  },
+  "experience": 0.2,
+  "cookingtime": 70,
+  "need_polishing": false,
+  "tool_type": "hoe"
+}

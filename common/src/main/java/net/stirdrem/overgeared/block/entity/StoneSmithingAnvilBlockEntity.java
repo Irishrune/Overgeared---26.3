@@ -32,7 +32,7 @@ public class StoneSmithingAnvilBlockEntity extends AbstractSmithingAnvilBlockEnt
     @Override
     protected ForgingQuality determineForgingQuality() {
         // Get quality from anvil or use default if null
-        ForgingQuality quality = anvilBlock.getQuality();
+        ForgingQuality quality = getStrikeQuality();
         if (quality == null) {
             return ForgingQuality.POOR; // Default quality
         }

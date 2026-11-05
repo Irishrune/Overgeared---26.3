@@ -1,0 +1,12 @@
+{
+  "type": "overgeared:crafting_shapeless",
+  "category": "equipment",
+  "result": {
+    "id": "overgeared:steel_sword",
+    "count": 1
+  },
+  "ingredients": [
+    "overgeared:steel_sword_blade",
+    "minecraft:stick"
+  ]
+}

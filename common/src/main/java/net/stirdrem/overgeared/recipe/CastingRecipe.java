@@ -141,7 +141,7 @@ public class CastingRecipe implements OvergearedStationRecipe<RecipeInput> {
         return out;
     }
 
-    @Override
+    // Compatibility helper; Recipe no longer exposes this hook on 26.3.
     public NonNullList<ItemStack> getRemainingItems(RecipeInput input) {
         NonNullList<ItemStack> remaining = NonNullList.withSize(input.size(), ItemStack.EMPTY);
 
@@ -169,24 +169,10 @@ public class CastingRecipe implements OvergearedStationRecipe<RecipeInput> {
     public @NotNull NonNullList<Ingredient> getIngredients() {
         NonNullList<Ingredient> list = NonNullList.create();
 
-        // Calculate total material amount
-        int total = requiredMaterials.values().stream().mapToInt(Integer::intValue).sum();
-
-        CastData castData = new CastData(
-                "", // quality
-                toolType,
-                requiredMaterials,
-                total,
-                total,
-                List.of(), // input
-                ItemStack.EMPTY, // output
-                false // heated
-        );
-
-        ItemStack dummyCast = new ItemStack(net.stirdrem.overgeared.item.ModItems.CLAY_TOOL_CAST.get());
-        dummyCast.set(ModComponents.CAST_DATA.get(), castData);
-
-        list.add(Ingredient.of(dummyCast));
+        // 26.3 removed Ingredient.of(ItemStack). This is only a recipe-book
+        // placeholder; matches() validates the cast's tool type and materials.
+        // The structured cast composition remains available via recipe fields.
+        list.add(Ingredient.of(net.stirdrem.overgeared.item.ModItems.CLAY_TOOL_CAST.get()));
         return list;
     }
 

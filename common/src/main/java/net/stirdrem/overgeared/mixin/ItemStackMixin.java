@@ -3,7 +3,6 @@ package net.stirdrem.overgeared.mixin;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -22,6 +21,15 @@ import static net.stirdrem.overgeared.util.BrokenHelper.isBroken;
 
 @Mixin(ItemStack.class)
 public abstract class ItemStackMixin {
+    @Inject(method = {"getHoverName", "getStyledHoverName", "getDisplayName"}, at = @At("RETURN"), cancellable = true)
+    private void overgeared$qualityName(CallbackInfoReturnable<net.minecraft.network.chat.Component> cir) {
+        ForgingQuality quality = ((ItemStack) (Object) this).get(ModComponents.FORGING_QUALITY.get());
+        if (quality != null && quality != ForgingQuality.NONE && quality != ForgingQuality.WELL) {
+            // Presentation only: retain translations, custom names, enchantments and saved components.
+            cir.setReturnValue(cir.getReturnValue().copy().withStyle(quality.getColor()));
+        }
+    }
+
     @Inject(
             method = "getDestroySpeed",
             at = @At("RETURN"),
@@ -38,7 +46,8 @@ public abstract class ItemStackMixin {
             return;
         }
 
-        float baseSpeed = cir.getReturnValueF();
+        float baseSpeed = cir.getReturnValueF() * net.stirdrem.overgeared.util.SmithingTreatments.miningMultiplier(stack);
+        cir.setReturnValue(baseSpeed);
 
         ForgingQuality quality = stack.get(ModComponents.FORGING_QUALITY.get());
         if (quality != null) {
@@ -70,7 +79,7 @@ public abstract class ItemStackMixin {
                 qualityMultiplier,
                 reductions == null ? 0 : reductions,
                 ServerConfig.DURABILITY_REDUCE_PER_GRIND.get().floatValue());
-        cir.setReturnValue(calculated);
+        cir.setReturnValue(Math.max(1, Math.round(calculated * net.stirdrem.overgeared.util.SmithingTreatments.durabilityMultiplier(stack))));
     }
 
     @Inject(method = "getBarWidth", at = @At("HEAD"), cancellable = true)
@@ -128,11 +137,11 @@ public abstract class ItemStackMixin {
 
     @Inject(method = "use", at = @At("HEAD"), cancellable = true)
     private void disableUse(Level level, Player player, InteractionHand hand,
-                            CallbackInfoReturnable<InteractionResultHolder<ItemStack>> cir) {
+                            CallbackInfoReturnable<InteractionResult> cir) {
         ItemStack stack = (ItemStack) (Object) this;
 
         if (isBroken(stack)) {
-            cir.setReturnValue(InteractionResultHolder.fail(stack));
+            cir.setReturnValue(InteractionResult.FAIL);
         }
     }
 

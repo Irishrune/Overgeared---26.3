@@ -1,10 +1,8 @@
 package net.stirdrem.overgeared.util.items;
 
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.item.ItemStack;
 
 /**
@@ -127,29 +125,34 @@ public class ItemStackHandler implements IItemHandlerModifiable {
         return true;
     }
 
-    public CompoundTag serializeNBT(HolderLookup.Provider provider) {
-        ListTag items = new ListTag();
+    /**
+     * Write the original NeoForge-compatible inventory layout through the 26.3
+     * ValueOutput abstraction.  ItemStack.MAP_CODEC is deliberately written
+     * into each item compound alongside the legacy "Slot" key; changing to
+     * a nested "stack" field would make previously saved anvils unreadable.
+     */
+    public void write(ValueOutput output) {
+        output.putInt("Size", stacks.size());
+        ValueOutput.ValueOutputList items = output.childrenList("Items");
         for (int i = 0; i < stacks.size(); i++) {
-            if (!stacks.get(i).isEmpty()) {
-                CompoundTag itemTag = new CompoundTag();
-                itemTag.putInt("Slot", i);
-                items.add(stacks.get(i).save(provider, itemTag));
+            ItemStack stack = stacks.get(i);
+            if (!stack.isEmpty()) {
+                ValueOutput entry = items.addChild();
+                entry.putInt("Slot", i);
+                entry.store(ItemStack.MAP_CODEC, stack);
             }
         }
-        CompoundTag nbt = new CompoundTag();
-        nbt.put("Items", items);
-        nbt.putInt("Size", stacks.size());
-        return nbt;
     }
 
-    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
-        setSize(nbt.contains("Size", Tag.TAG_INT) ? nbt.getInt("Size") : stacks.size());
-        ListTag items = nbt.getList("Items", Tag.TAG_COMPOUND);
-        for (int i = 0; i < items.size(); i++) {
-            CompoundTag itemTag = items.getCompound(i);
-            int slot = itemTag.getInt("Slot");
+    /** Read the same layout without relying on removed mutable NBT helpers. */
+    public void read(ValueInput input) {
+        int size = input.getIntOr("Size", stacks.size());
+        // A corrupt save must not allocate an unbounded item list.
+        setSize(Math.max(1, Math.min(512, size)));
+        for (ValueInput entry : input.childrenListOrEmpty("Items")) {
+            int slot = entry.getIntOr("Slot", -1);
             if (slot >= 0 && slot < stacks.size()) {
-                ItemStack.parse(provider, itemTag).ifPresent(stack -> stacks.set(slot, stack));
+                entry.read(ItemStack.MAP_CODEC).ifPresent(stack -> stacks.set(slot, stack));
             }
         }
         onLoad();

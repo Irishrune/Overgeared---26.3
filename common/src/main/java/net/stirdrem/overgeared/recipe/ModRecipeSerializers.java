@@ -15,6 +15,9 @@ public class ModRecipeSerializers {
     public static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS =
             DeferredRegister.create(Registries.RECIPE_SERIALIZER, OvergearedMod.MOD_ID);
 
+    public static final Supplier<RecipeSerializer<DisabledRecipe>> DISABLED =
+            RECIPE_SERIALIZERS.register("disabled", () -> recipe(DisabledRecipe.Serializer.CODEC, DisabledRecipe.Serializer.STREAM_CODEC));
+
     public static final Supplier<RecipeSerializer<ForgingRecipe>> FORGING_SERIALIZER =
             RECIPE_SERIALIZERS.register("forging", () -> recipe(ForgingRecipe.Serializer.CODEC, ForgingRecipe.Serializer.STREAM_CODEC));
     public static final Supplier<RecipeSerializer<RockKnappingRecipe>> ROCK_KNAPPING_SERIALIZER =

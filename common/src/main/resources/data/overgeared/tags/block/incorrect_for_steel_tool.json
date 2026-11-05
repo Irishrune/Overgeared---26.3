@@ -1,6 +1,8 @@
 {
   "replace": false,
   "values": [
-    "#minecraft:incorrect_for_iron_tool"
+    "minecraft:netherite_block",
+    "minecraft:respawn_anchor",
+    "minecraft:ancient_debris"
   ]
 }

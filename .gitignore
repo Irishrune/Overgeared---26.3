@@ -31,3 +31,7 @@ forge*changelog.txt
 
 # multiloader run dirs
 runs
+
+# Python regression-check caches
+__pycache__/
+*.pyc

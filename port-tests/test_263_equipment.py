@@ -32,7 +32,11 @@ class TestEquipmentPort(unittest.TestCase):
         for mat,repair,parent in [('steel','overgeared:steel_ingot','iron'),('copper','minecraft:copper_ingot','stone')]:
             base=ROOT/'common/src/main/resources/data/overgeared/tags'
             self.assertEqual(json.loads((base/'item'/f'repairs_{mat}_tools.json').read_text())['values'],[repair])
-            self.assertEqual(json.loads((base/'block'/f'incorrect_for_{mat}_tool.json').read_text())['values'],[f'#minecraft:incorrect_for_{parent}_tool'])
+            forbidden=json.loads((base/'block'/f'incorrect_for_{mat}_tool.json').read_text())['values']
+            if mat == 'copper':
+                self.assertEqual(forbidden, ['#minecraft:needs_iron_tool', '#minecraft:needs_diamond_tool', '#overgeared:needs_steel_tool'])
+            else:
+                self.assertEqual(forbidden, ['minecraft:netherite_block', 'minecraft:respawn_anchor', 'minecraft:ancient_debris'])
     def test_equipment_assets_resolve_vanilla_fallbacks(self):
         for mat,texture in [('steel','minecraft:iron'),('copper','minecraft:copper')]:
             p=ROOT/'common/src/main/resources/assets/overgeared/equipment'/f'{mat}.json'

@@ -1,0 +1,28 @@
+{
+  "type": "overgeared:forging",
+  "category": "misc",
+  "treatment": "balanced",
+  "pattern": [
+    "EM"
+  ],
+  "key": {
+    "E": {
+      "ingredient": "overgeared:golden_axe_head",
+      "transfer_nbt": true
+    },
+    "M": {
+      "ingredient": "minecraft:copper_ingot"
+    }
+  },
+  "result": {
+    "id": "overgeared:golden_axe_head",
+    "count": 1
+  },
+  "hammering": 4,
+  "tier": "iron",
+  "has_quality": false,
+  "needs_minigame": true,
+  "has_polishing": false,
+  "need_quenching": false,
+  "quality_difficulty": "expert"
+}

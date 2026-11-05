@@ -112,7 +112,6 @@ public class NetherAlloySmeltingRecipe implements OvergearedStationRecipe<Recipe
     }
 
     @Override
-    @Override
     public String group() {
         return getGroup();
     }

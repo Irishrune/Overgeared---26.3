@@ -1,6 +1,7 @@
 package net.stirdrem.overgeared.event;
 
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
@@ -53,7 +54,7 @@ public class QualityAttributeHandler {
                 if (value == null || value.amount() == 0)
                     continue;
                 Attribute attribute = BuiltInRegistries.ATTRIBUTE
-                        .get(def.attribute());
+                        .getValue(def.attribute());
                 if (attribute == null)
                     continue;
 
@@ -66,7 +67,7 @@ public class QualityAttributeHandler {
      */
     public static ItemAttributeModifiers applyQualityModifiers(ItemStack stack, ItemAttributeModifiers modifiers) {
         ForgingQuality quality = stack.get(ModComponents.FORGING_QUALITY.get());
-        if (quality == null || quality == ForgingQuality.NONE || isBroken(stack)) {
+        if ((quality == null || quality == ForgingQuality.NONE) && !stack.has(ModComponents.TREATMENT.get()) || isBroken(stack)) {
             return modifiers;
         }
         List<ItemAttributeModifiers.Entry> entries = new ArrayList<>(modifiers.modifiers());
@@ -91,7 +92,7 @@ public class QualityAttributeHandler {
                 }
             }
         });
-        return new ItemAttributeModifiers(entries, modifiers.showInTooltip());
+        return net.stirdrem.overgeared.util.SmithingTreatments.attributes(stack, new ItemAttributeModifiers(entries));
     }
 
     public static boolean matches(ItemStack stack, List<QualityTarget> targets) {
@@ -100,14 +101,16 @@ public class QualityAttributeHandler {
         for (QualityTarget target : targets) {
             switch (target.type()) {
                 case WEAPON -> {
-                    if (item instanceof TieredItem ||
-                            item instanceof ProjectileWeaponItem) {
+                    if (stack.has(DataComponents.WEAPON)
+                            || stack.has(DataComponents.TOOL)
+                            || item instanceof ProjectileWeaponItem) {
                         return true;
                     }
                 }
 
                 case ARMOR -> {
-                    if (item instanceof ArmorItem) {
+                    var equippable = stack.get(DataComponents.EQUIPPABLE);
+                    if (equippable != null && equippable.slot().isArmor()) {
                         return true;
                     }
                 }
@@ -154,8 +157,7 @@ public class QualityAttributeHandler {
             AttributeModifier originalModifier = entry.modifier();
 
             // Remove original
-            if (operation == AttributeModifier.Operation.ADD_VALUE)
-                event.removeModifier(entry.attribute(), originalModifier.id());
+            event.removeModifier(entry.attribute(), originalModifier.id());
 
             // Add modified version
             event.addModifier(
@@ -167,16 +169,10 @@ public class QualityAttributeHandler {
 
     private static AttributeModifier createModifiedAttribute(AttributeModifier original, double bonus,
                                                              AttributeModifier.Operation operation, ForgingQuality quality) {
-        Identifier id;
-        double amount;
-        if (operation == AttributeModifier.Operation.ADD_VALUE) {
-            id = original.id();
-            amount = original.amount() + bonus;
-        } else {
-            id = Identifier.parse(original.id() + "_overgeared_" + quality.getDisplayName() + "_"
-                    + operation.name().toLowerCase(java.util.Locale.ROOT) + (int) bonus * 10);
-            amount = bonus;
-        }
-        return new AttributeModifier(id, amount, operation);
+        // Scale this item's contribution, not the player's entire armor/damage.
+        // Four armor pieces must not multiply one another's protection bonuses.
+        double amount = operation == AttributeModifier.Operation.ADD_VALUE
+                ? original.amount() + bonus : original.amount() * (1.0 + bonus);
+        return new AttributeModifier(original.id(), amount, original.operation());
     }
 }

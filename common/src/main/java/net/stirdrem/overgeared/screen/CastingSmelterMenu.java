@@ -145,7 +145,7 @@ public class CastingSmelterMenu extends AbstractContainerMenu {
                 }
             }
             // FUEL → FUEL SLOT
-            else if (Services.PLATFORM.getBurnTime(stack) > 0) {
+            else if (Services.PLATFORM.isCookingFuel(stack)) {
                 if (!this.moveItemStackTo(
                         stack,
                         CastingSmelterBlockEntity.SLOT_FUEL,

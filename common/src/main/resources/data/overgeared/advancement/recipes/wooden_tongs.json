@@ -1,0 +1,45 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_hot_item": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "#overgeared:hot_items"
+          }
+        ]
+      }
+    },
+    "has_heated_metal": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "#overgeared:heated_metals"
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipes": [
+          "overgeared:wooden_tongs"
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_hot_item",
+      "has_heated_metal",
+      "has_the_recipe"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "overgeared:wooden_tongs"
+    ]
+  }
+}

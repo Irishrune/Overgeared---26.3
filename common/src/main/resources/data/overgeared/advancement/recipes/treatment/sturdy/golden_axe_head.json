@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_equipment": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "overgeared:golden_axe_head"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_equipment"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "overgeared:treatment/sturdy/golden_axe_head"
+    ]
+  }
+}

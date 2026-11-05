@@ -47,10 +47,6 @@ public class SteelSmithingAnvil extends AbstractSmithingAnvil {
         super(tier, properties);
     }
 
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return null;
-    }
 
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {

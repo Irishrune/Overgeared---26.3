@@ -1,6 +1,7 @@
 package net.stirdrem.overgeared.block.entity;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -12,6 +13,8 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -134,6 +137,19 @@ public abstract class BaseSmithingAnvilBlockEntity
     }
 
 
+    /**
+     * In Minecraft 26.3, this callback runs while the anvil entity still
+     * exists. Unlike a vanilla Container block entity, this item-handler-
+     * backed entity does not drop inventory automatically.
+     */
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        if (level != null && !level.isClientSide()) {
+            drops();
+        }
+        super.preRemoveSideEffects(pos, state);
+    }
+
     public void drops() {
 
         SimpleContainer container =
@@ -165,62 +181,24 @@ public abstract class BaseSmithingAnvilBlockEntity
 
 
     @Override
-    protected void saveAdditional(
-            CompoundTag tag,
-            HolderLookup.Provider provider
-    ) {
-
-        super.saveAdditional(tag, provider);
-
-
-        tag.put(
-                "inventory",
-                itemHandler.serializeNBT(provider)
-        );
-
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        itemHandler.write(output.child("inventory"));
 
         if (ownerUUID != null) {
-            tag.putUUID(
-                    "ownerUUID",
-                    ownerUUID
-            );
-
-            tag.putLong(
-                    "sessionStartTime",
-                    sessionStartTime
-            );
+            output.store("ownerUUID", UUIDUtil.CODEC, ownerUUID);
+            output.putLong("sessionStartTime", sessionStartTime);
         }
     }
-
 
     @Override
-    protected void loadAdditional(
-            CompoundTag tag,
-            HolderLookup.Provider provider
-    ) {
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        input.child("inventory").ifPresent(itemHandler::read);
 
-        super.loadAdditional(tag, provider);
-
-
-        if (tag.contains("inventory")) {
-            itemHandler.deserializeNBT(
-                    provider,
-                    tag.getCompound("inventory")
-            );
-        }
-
-
-        if (tag.hasUUID("ownerUUID")) {
-
-            ownerUUID =
-                    tag.getUUID("ownerUUID");
-
-            sessionStartTime =
-                    tag.getLong("sessionStartTime");
-        }
+        ownerUUID = input.read("ownerUUID", UUIDUtil.CODEC).orElse(null);
+        sessionStartTime = ownerUUID == null ? 0L : input.getLongOr("sessionStartTime", 0L);
     }
-
-
 
 
     /*
@@ -240,23 +218,11 @@ public abstract class BaseSmithingAnvilBlockEntity
 
 
     @Override
-    public CompoundTag getUpdateTag(
-            HolderLookup.Provider provider
-    ) {
-
-        CompoundTag tag =
-                super.getUpdateTag(provider);
-
-        tag.put(
-                "inventory",
-                itemHandler.serializeNBT(provider)
-        );
-
-        return tag;
+    public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
+        // Include inventory data for the rendered ingots/parts when chunks load,
+        // using the same codec as the actual block-entity save.
+        return saveWithoutMetadata(provider);
     }
-
-
-
 
 
     /*

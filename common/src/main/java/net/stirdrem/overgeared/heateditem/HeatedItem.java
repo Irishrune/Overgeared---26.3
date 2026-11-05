@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -177,7 +178,7 @@ public final class HeatedItem {
             } else if (isOff) {
                 lEntity.setItemInHand(InteractionHand.OFF_HAND, newStack);
             } else if (lEntity instanceof Player player) {
-                if (!player.getInventory().add(newStack)) player.drop(newStack, false);
+                if (!player.getInventory().add(newStack)) player.drop(newStack, false, Prediction.SERVER_ONLY);
             }
         } else if (Boolean.TRUE.equals(stack.get(ModComponents.HEATED_COMPONENT.get()))) {
             removeHeat(stack);
@@ -207,7 +208,7 @@ public final class HeatedItem {
         stack.shrink(1);
 
         if (!player.getInventory().add(cooledStack)) {
-            player.drop(cooledStack, false);
+            player.drop(cooledStack, false, Prediction.SERVER_ONLY);
         }
         level.playSound(null, player.blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.7f, 1.0f);
     }

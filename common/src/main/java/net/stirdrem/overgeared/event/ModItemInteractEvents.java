@@ -5,6 +5,7 @@ import net.stirdrem.overgeared.platform.Menus;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -22,6 +23,9 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.util.Prediction;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerLevelAccess;
@@ -206,7 +210,7 @@ public class ModItemInteractEvents {
         if (!anvilBE.hasRecipe()) {
             if (crouchRequired && player.isCrouching()) {
                 ((ServerPlayer) player).sendSystemMessage(
-                        Component.translatable("message.overgeared.no_recipe").withStyle(ChatFormatting.RED), true);
+                        anvilBE.forgingProblem().copy().withStyle(ChatFormatting.RED), true);
                 event.setCanceled(true);
                 event.setCancellationResult(InteractionResult.FAIL);
             }
@@ -215,7 +219,7 @@ public class ModItemInteractEvents {
         if (!anvilBE.hasQuality() && !anvilBE.needsMinigame()) {
             if (crouchRequired && player.isCrouching()) {
                 ((ServerPlayer) player).sendSystemMessage(
-                        Component.translatable("message.overgeared.item_has_no_quality").withStyle(ChatFormatting.RED), true);
+                        Component.translatable("message.overgeared.direct_hammering").withStyle(ChatFormatting.YELLOW), true);
                 event.setCanceled(true);
                 event.setCancellationResult(InteractionResult.FAIL);
             }
@@ -264,8 +268,8 @@ public class ModItemInteractEvents {
         }
         Optional<RecipeHolder<ForgingRecipe>> recipeOpt = anvilBE.getCurrentRecipeHolder();
 
-        if (serverPlayer.getServer() != null && serverPlayer.getServer().getGameRules().get(GameRules.LIMITED_CRAFTING)) {
-            if (!serverPlayer.getRecipeBook().contains(recipeOpt.get())) {
+        if (level instanceof ServerLevel serverLevel && serverLevel.getGameRules().get(GameRules.LIMITED_CRAFTING)) {
+            if (recipeOpt.isEmpty() || !serverPlayer.getRecipeBook().contains(recipeOpt.get().id())) {
                 serverPlayer.sendSystemMessage(
                         Component.translatable("message.overgeared.no_recipe")
                                 .withStyle(ChatFormatting.RED),
@@ -284,7 +288,7 @@ public class ModItemInteractEvents {
 
             // Sync ownership
             CompoundTag sync = new CompoundTag();
-            sync.putUUID("anvilOwner", playerUUID);
+            sync.store("anvilOwner", UUIDUtil.CODEC, playerUUID);
             sync.putLong("anvilPos", pos.asLong());
             PacketDistributor.sendToAllPlayers(new MinigameSyncS2CPacket(sync));
 
@@ -296,6 +300,14 @@ public class ModItemInteractEvents {
 
             anvilBE.setPlayer(player);
             anvilBE.setMinigameOn(true);
+            if (anvilBE.getCurrentRecipe().map(ForgingRecipe::isTreatment).orElse(false)) {
+                serverPlayer.sendSystemMessage(Component.translatable("message.overgeared.treatment_rules"), false);
+            } else if (anvilBE.hasQuality()) {
+                String cap = "well";
+                var blueprint = anvilBE.getItemHandler().getStackInSlot(11).get(ModComponents.BLUEPRINT_DATA.get());
+                if (!(anvilBE instanceof net.stirdrem.overgeared.block.entity.StoneSmithingAnvilBlockEntity) && blueprint != null) cap = blueprint.quality().toLowerCase(java.util.Locale.ROOT);
+                serverPlayer.sendSystemMessage(Component.translatable("message.overgeared.quality_cap", Component.translatable("quality.overgeared." + cap)), true);
+            }
 
         } else if (currentOwner.equals(playerUUID)) {
             if (!player.isCrouching()) {
@@ -309,7 +321,7 @@ public class ModItemInteractEvents {
         }
 
         event.setCanceled(true);
-        event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide()));
+        event.setCancellationResult(InteractionResult.SUCCESS);
     }
 
     private static void onUseFletching(PlayerInteractEvent.RightClickBlock event, Player player, Level level) {
@@ -327,7 +339,7 @@ public class ModItemInteractEvents {
         );
         player.openMenu(provider);
 
-        event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide()));
+        event.setCancellationResult(InteractionResult.SUCCESS);
         event.setCanceled(true);
     }
 
@@ -340,7 +352,7 @@ public class ModItemInteractEvents {
         if (waterLevel <= 0) return;
         HeatedItem.setCooledSingle(heldItem, player);
 
-        event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide()));
+        event.setCancellationResult(InteractionResult.SUCCESS);
         event.setCanceled(true);
     }
 
@@ -377,7 +389,7 @@ public class ModItemInteractEvents {
                 }
                 stack.shrink(1);
                 if (!player.getInventory().add(polishedItem)) {
-                    player.drop(polishedItem, false);
+                    player.drop(polishedItem, false, Prediction.SERVER_ONLY);
                 }
             } else {
                 stack.set(ModComponents.POLISHED.get(), true);
@@ -488,13 +500,13 @@ public class ModItemInteractEvents {
         if (level.getRandom().nextFloat() < tool.breakChance()) {
 
             if (heldItem.isDamageableItem()) {
-                heldItem.hurtAndBreak(1, player, LivingEntity.getSlotForHand(event.getHand()));
+                heldItem.hurtAndBreak(1, player, event.getHand() == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
             } else {
                 heldItem.shrink(1);
             }
 
             level.playSound(null, player.blockPosition(),
-                    SoundEvents.ITEM_BREAK, SoundSource.PLAYERS,
+                    SoundEvents.ITEM_BREAK.value(), SoundSource.PLAYERS,
                     0.8F, 1.0F);
         } else {
             level.playSound(null, pos,
@@ -502,7 +514,7 @@ public class ModItemInteractEvents {
                     1.0F, 1.0F);
         }
 
-        player.swing(event.getHand(), true);
+        player.swing(event.getHand(), SwingAnimation.DEFAULT, true);
         event.setCancellationResult(InteractionResult.SUCCESS);
         event.setCanceled(true);
     }
@@ -510,12 +522,12 @@ public class ModItemInteractEvents {
     public static void handleAnvilOwnershipSync(CompoundTag syncData) {
         UUID owner = null;
         if (syncData.contains("anvilOwner")) {
-            owner = syncData.getUUID("anvilOwner");
-            if (owner.getMostSignificantBits() == 0 && owner.getLeastSignificantBits() == 0) {
+            owner = syncData.read("anvilOwner", UUIDUtil.CODEC).orElse(null);
+            if (owner != null && owner.getMostSignificantBits() == 0 && owner.getLeastSignificantBits() == 0) {
                 owner = null;
             }
         }
-        BlockPos pos = BlockPos.of(syncData.getLong("anvilPos"));
+        BlockPos pos = BlockPos.of(syncData.getLongOr("anvilPos", 0L));
         ClientAnvilMinigameData.putOccupiedAnvil(pos, owner);
 
         //  Only start minigame if this client is the new owner and it was waiting
@@ -557,7 +569,7 @@ public class ModItemInteractEvents {
             // 3. Sync null ownership to all clients (they clear their occupied-anvil entry on receipt)
             CompoundTag syncData = new CompoundTag();
             syncData.putLong("anvilPos", pos.asLong());
-            syncData.putUUID("anvilOwner", new UUID(0, 0)); // special "no owner" UUID
+            syncData.store("anvilOwner", UUIDUtil.CODEC, new UUID(0, 0)); // special "no owner" UUID
             PacketDistributor.sendToAllPlayers(new MinigameSyncS2CPacket(syncData));
         }
     }
@@ -639,7 +651,7 @@ public class ModItemInteractEvents {
                 player.setItemInHand(player.getUsedItemHand(), cooledIngot);
             } else {
                 if (!player.getInventory().add(cooledIngot)) {
-                    player.drop(cooledIngot, false);
+                    player.drop(cooledIngot, false, Prediction.SERVER_ONLY);
                 }
             }
 
@@ -772,7 +784,7 @@ public class ModItemInteractEvents {
             usedHand.shrink(1);
             player.setItemInHand(hand, usedHand);
             if (!player.getInventory().add(resultArrow)) {
-                player.drop(resultArrow, false);
+                player.drop(resultArrow, false, Prediction.SERVER_ONLY);
             }
         }
 

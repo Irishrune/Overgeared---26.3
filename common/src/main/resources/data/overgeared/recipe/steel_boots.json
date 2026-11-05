@@ -1,0 +1,26 @@
+{
+  "type": "overgeared:forging",
+  "category": "armors",
+  "result": {
+    "id": "overgeared:steel_boots",
+    "count": 1
+  },
+  "pattern": [
+    "# #",
+    "# #"
+  ],
+  "key": {
+    "#": {
+      "ingredient": "overgeared:steel_plate",
+      "requires_heated": false,
+      "transfer_nbt": false
+    }
+  },
+  "hammering": 3,
+  "tier": "iron",
+  "need_quenching": false,
+  "has_polishing": false,
+  "blueprint": [
+    "boots"
+  ]
+}

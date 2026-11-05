@@ -9,12 +9,10 @@
     "ItemStackFabricMixin",
     "LootTableMixin",
     "PlayerSweepMixin",
-    "PotionBrewingMixin",
     "RecipeBookSettingsMixin",
     "RecipeBookTypeMixin"
   ],
   "client": [
-    "client.ClientRecipeBookMixin",
     "client.RecipeBookCategoriesMixin"
   ],
   "injectors": {

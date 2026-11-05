@@ -1,0 +1,14 @@
+{
+  "type": "overgeared:casting",
+  "result": {
+    "id": "overgeared:copper_axe_head",
+    "count": 1
+  },
+  "input": {
+    "copper": 27
+  },
+  "experience": 0.4,
+  "cookingtime": 150,
+  "need_polishing": true,
+  "tool_type": "axe"
+}

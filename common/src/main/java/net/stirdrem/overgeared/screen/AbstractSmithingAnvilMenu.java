@@ -1,11 +1,10 @@
 package net.stirdrem.overgeared.screen;
 
 import net.minecraft.core.NonNullList;
-import net.minecraft.recipebook.ServerPlaceRecipe;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.player.StackedContents;
+import net.minecraft.world.entity.player.StackedItemContents;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SmithingTemplateItem;
@@ -32,14 +31,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class AbstractSmithingAnvilMenu extends RecipeBookMenu<RecipeInput, ForgingRecipe> {
+public class AbstractSmithingAnvilMenu extends RecipeBookMenu {
     private final CraftingContainer craftingContainer = new CraftingContainer() {
         @Override
-        public void fillStackedContents(StackedContents contents) {
+        public void fillStackedContents(StackedItemContents contents) {
             for (int i = 0; i < getContainerSize(); i++) {
                 ItemStack stack = getItem(i);
                 if (!stack.isEmpty()) {
-                    contents.accountStack(stack, 1);
+                    contents.accountSimpleStack(stack);
                 }
             }
         }
@@ -240,7 +239,7 @@ public class AbstractSmithingAnvilMenu extends RecipeBookMenu<RecipeInput, Forgi
             @Override
             protected void checkTakeAchievements(ItemStack stack) {
                 if (this.removeCount > 0) {
-                    stack.onCraftedBy(AbstractSmithingAnvilMenu.this.player.level(), AbstractSmithingAnvilMenu.this.player, this.removeCount);
+                    stack.onCraftedBy(AbstractSmithingAnvilMenu.this.player, this.removeCount);
                     Services.PLATFORM.firePlayerCraftingEvent(AbstractSmithingAnvilMenu.this.player, stack, AbstractSmithingAnvilMenu.this.craftingContainer);
                 }
                 // Award recipe to player for recipe book integration
@@ -460,29 +459,7 @@ public class AbstractSmithingAnvilMenu extends RecipeBookMenu<RecipeInput, Forgi
     }
 
     public ItemStack getGhostResult() {
-        // On client side, check if Polymorph has a selected output
-        if (level.isClientSide()) {
-            try {
-                if (Polymorph.LOADED) {
-                    Optional<ItemStack> polymorphOutput =
-                            Polymorph.getSelectedOutput();
-                    if (polymorphOutput.isPresent()) {
-                        return polymorphOutput.get();
-                    } else {
-                        Optional<ForgingRecipe> recipeOptional = blockEntity.getCurrentRecipe();
-                        if (recipeOptional.isPresent()) {
-                            ForgingRecipe recipe = recipeOptional.get();
-                            if (blockEntity.hasRecipe()) {
-                                return recipe.getResultItem(level.registryAccess()).copy();
-                            }
-                        }
-                        return ItemStack.EMPTY;
-                    }
-                }
-            } catch (Exception e) {
-                // Polymorph not available - fall through to default behavior
-            }
-        }
+        if (level.isClientSide()) return blockEntity.getRecipePreview();
 
         // Default behavior: return the expected result based on current inputs
         // Avoid using cached recipe (getCurrentRecipe())
@@ -497,39 +474,33 @@ public class AbstractSmithingAnvilMenu extends RecipeBookMenu<RecipeInput, Forgi
     }
 
     @Override
-    public void fillCraftSlotsStackedContents(StackedContents contents) {
+    public void fillCraftSlotsStackedContents(StackedItemContents contents) {
         for (int i = 0; i < this.craftingContainer.getContainerSize(); ++i) {
             contents.accountSimpleStack(this.craftingContainer.getItem(i));
         }
     }
 
-    @Override
     public void clearCraftingContent() {
         if (this.player.level().isClientSide()) return;
         this.craftingContainer.clearContent();
     }
 
-    @Override
     public boolean recipeMatches(RecipeHolder<ForgingRecipe> recipe) {
         return recipe.value().matches(new RecipeWrapper(blockEntity.getItemHandler()), level);
     }
 
-    @Override
     public int getResultSlotIndex() {
         return this.resultSlot.index;
     }
 
-    @Override
     public int getGridWidth() {
         return 3;
     }
 
-    @Override
     public int getGridHeight() {
         return 3;
     }
 
-    @Override
     public int getSize() {
         return 9;
     }
@@ -539,7 +510,6 @@ public class AbstractSmithingAnvilMenu extends RecipeBookMenu<RecipeInput, Forgi
         return OvergearedMod.FORGING;
     }
 
-    @Override
     public boolean shouldMoveToInventory(int slot) {
         return slot < (getGridWidth() * getGridHeight());
     }
@@ -548,108 +518,100 @@ public class AbstractSmithingAnvilMenu extends RecipeBookMenu<RecipeInput, Forgi
         return blockEntity;
     }
 
+    /**
+     * Fabric 26.3 calls the recipe-book placement hook with a ServerLevel and
+     * a drop-permission flag. Forging recipes publish placement ingredients to
+     * the book, but use this custom transfer for the separate blueprint slot.
+     *
+     * The existing hands-on hammering/minigame is still required after placement.
+     * Never overwrite an occupied grid slot, and preflight every ingredient
+     * before removing a stack from the player's inventory.  Players may clear
+     * an incompatible grid manually; the recipe book only places into a clean
+     * or compatible grid.
+     */
     @Override
-    @SuppressWarnings("unchecked")
-    public void handlePlacement(boolean placeAll, RecipeHolder<?> recipeHolder, ServerPlayer player) {
-
-        if (!(recipeHolder.value() instanceof ForgingRecipe forgingRecipe)) {
-            super.handlePlacement(placeAll, recipeHolder, player);
-            return;
+    public PostPlaceAction handlePlacement(boolean useMaxItems, boolean allowDroppingItemsToClear,
+                                           RecipeHolder<?> recipeHolder, ServerLevel serverLevel,
+                                           Inventory inventory) {
+        if (!(recipeHolder.value() instanceof ForgingRecipe recipe)
+                || inventory.player != this.player
+                || this.player.containerMenu != this
+                || this.level != serverLevel) {
+            return PostPlaceAction.NOTHING;
         }
 
-        if (player.level().isClientSide()) return;
-
-        RecipeHolder<ForgingRecipe> recipe =
-                (RecipeHolder<ForgingRecipe>) recipeHolder;
-
-        // If different recipe → clear grid first
-        if (!this.recipeMatches(recipe)) {
-            this.clearContainer(this.player, this.craftingContainer);
+        int width = recipe.getWidth();
+        int height = recipe.getHeight();
+        List<Optional<Ingredient>> ingredients = recipe.getIngredients();
+        if (width < 1 || width > 3 || height < 1 || height > 3
+                || ingredients.size() != width * height) {
+            return PostPlaceAction.NOTHING;
         }
 
-        // Build stacked contents from player inventory
-        StackedContents stacked = new StackedContents();
-        player.getInventory().fillStackedContents(stacked);
-
-        if (!stacked.canCraft(recipe.value(), null)) {
-            new ServerPlaceRecipe<>(this)
-                    .recipeClicked(player, recipe, placeAll);
-            return;
+        int playerSlotStart = this.slots.indexOf(this.resultSlot) + 1;
+        int[] remaining = new int[this.slots.size()];
+        for (int i = playerSlotStart; i < this.slots.size(); i++) {
+            remaining[i] = this.slots.get(i).getItem().getCount();
         }
 
-        List<Optional<Ingredient>> ingredients = recipe.value().getIngredients();
+        // Select a source inventory slot for every unfilled pattern position
+        // *before* moving anything, including repeated ingredients.
+        int[] sourceSlot = new int[9];
+        java.util.Arrays.fill(sourceSlot, -1);
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                int patternIndex = row * width + col;
+                int gridIndex = row * 3 + col;
+                Slot target = this.slots.get(this.craftingSlotIndices.get(gridIndex));
+                Optional<Ingredient> optional = ingredients.get(patternIndex);
+                if (optional.isEmpty()) {
+                    if (target.hasItem()) return PostPlaceAction.PLACE_GHOST_RECIPE;
+                    continue;
+                }
+                Ingredient ingredient = optional.get();
+                if (target.hasItem()) {
+                    if (!ingredient.test(target.getItem())) {
+                        return PostPlaceAction.PLACE_GHOST_RECIPE;
+                    }
+                    // Keep manually placed items intact (do not silently grow a
+                    // stack or add extra resources when placing one recipe).
+                    continue;
+                }
 
-        int recipeWidth = forgingRecipe.getWidth();
-        int recipeHeight = forgingRecipe.getHeight();
-
-        // Determine where player inventory starts dynamically
-        int firstPlayerSlot = this.slots.indexOf(this.resultSlot) + 1;
-        int totalSlots = this.slots.size();
-
-        for (int row = 0; row < recipeHeight; row++) {
-            for (int col = 0; col < recipeWidth; col++) {
-
-                int recipeIndex = col + row * recipeWidth;
-                if (recipeIndex >= ingredients.size()) continue;
-
-                Optional<Ingredient> optionalIngredient = ingredients.get(recipeIndex);
-                if (optionalIngredient.isEmpty()) continue;
-                Ingredient ingredient = optionalIngredient.get();
-
-                int gridIndex = col + row * 3;
-                if (gridIndex >= craftingSlotIndices.size()) continue;
-
-                int slotIndex = craftingSlotIndices.get(gridIndex);
-                Slot targetSlot = this.slots.get(slotIndex);
-
-                // If matching stack already exists → grow it
-                if (targetSlot.hasItem() && ingredient.test(targetSlot.getItem())) {
-
-                    for (int invIndex = firstPlayerSlot; invIndex < totalSlots; invIndex++) {
-                        Slot invSlot = this.slots.get(invIndex);
-                        ItemStack invStack = invSlot.getItem();
-
-                        if (!invStack.isEmpty() && ingredient.test(invStack)) {
-
-                            invStack.shrink(1);
-                            targetSlot.getItem().grow(1);
-
-                            if (invStack.isEmpty()) {
-                                invSlot.set(ItemStack.EMPTY);
-                            } else {
-                                invSlot.setChanged();
-                            }
-
-                            break;
-                        }
+                int matchingSource = -1;
+                for (int i = playerSlotStart; i < this.slots.size(); i++) {
+                    if (remaining[i] > 0 && ingredient.test(this.slots.get(i).getItem())) {
+                        matchingSource = i;
+                        remaining[i]--;
+                        break;
                     }
                 }
-                // Empty grid slot → place new stack
-                else if (!targetSlot.hasItem()) {
-
-                    for (int invIndex = firstPlayerSlot; invIndex < totalSlots; invIndex++) {
-                        Slot invSlot = this.slots.get(invIndex);
-                        ItemStack invStack = invSlot.getItem();
-
-                        if (!invStack.isEmpty() && ingredient.test(invStack)) {
-
-                            ItemStack moved = invStack.split(1);
-                            targetSlot.set(moved);
-
-                            if (invStack.isEmpty()) {
-                                invSlot.set(ItemStack.EMPTY);
-                            } else {
-                                invSlot.setChanged();
-                            }
-
-                            break;
-                        }
-                    }
-                }
+                if (matchingSource < 0) return PostPlaceAction.PLACE_GHOST_RECIPE;
+                sourceSlot[gridIndex] = matchingSource;
             }
         }
 
-        this.broadcastChanges();
-    }
+        // A partial/shifted grid can invalidate the forged recipe. Do not
+        // discard outside-pattern items without a deliberate player action.
+        for (int gridIndex = 0; gridIndex < 9; gridIndex++) {
+            int row = gridIndex / 3;
+            int col = gridIndex % 3;
+            if ((row >= height || col >= width)
+                    && this.slots.get(this.craftingSlotIndices.get(gridIndex)).hasItem()) {
+                return PostPlaceAction.PLACE_GHOST_RECIPE;
+            }
+        }
 
+        for (int gridIndex = 0; gridIndex < sourceSlot.length; gridIndex++) {
+            int src = sourceSlot[gridIndex];
+            if (src < 0) continue;
+            Slot from = this.slots.get(src);
+            Slot target = this.slots.get(this.craftingSlotIndices.get(gridIndex));
+            ItemStack one = from.remove(1);
+            target.set(one);
+            from.setChanged();
+        }
+        this.broadcastChanges();
+        return PostPlaceAction.NOTHING;
+    }
 }

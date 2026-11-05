@@ -5,15 +5,13 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.item.ArmorItem;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ProjectileWeaponItem;
-import net.minecraft.world.item.TieredItem;
 import net.stirdrem.overgeared.OvergearedMod;
 import net.stirdrem.overgeared.datapack.quality_attribute.QualityAttributeDefinition;
 import net.stirdrem.overgeared.datapack.quality_attribute.QualityTarget;
@@ -23,40 +21,54 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class QualityAttributeReloadListener
-        extends SimpleJsonResourceReloadListener {
+        extends LegacyJsonResourceReloadListener {
 
     public static final QualityAttributeReloadListener INSTANCE =
             new QualityAttributeReloadListener();
 
-    private static final List<QualityAttributeDefinition> definitions = new ArrayList<>();
+    private static volatile List<QualityAttributeDefinition> definitions = List.of();
+    private static String synchronizedJson = "[]";
 
     public QualityAttributeReloadListener() {
         super(new Gson(), "quality_attributes");
     }
 
     private static final Set<Item> cachedItems = new HashSet<>();
+    private static boolean cacheReady;
 
     @Override
     protected void apply(Map<Identifier, JsonElement> jsons,
                          ResourceManager manager,
                          ProfilerFiller profiler) {
 
-        definitions.clear();
-        cachedItems.clear();
+        JsonArray array = new JsonArray();
+        jsons.values().forEach(array::add);
+        acceptSync(array.toString());
 
-        for (JsonElement element : jsons.values()) {
-            QualityAttributeDefinition def = parse(element.getAsJsonObject());
-            definitions.add(def);
-        }
-
-        // build cache
-        cachedItems.addAll(resolveItems());
+        // Item components and tags are bound after resource reload completes.
+        // Resolve the affected-item cache on first gameplay use instead.
 
         OvergearedMod.LOGGER.info("Loaded {} quality attribute files", jsons.size());
     }
 
     public static List<QualityAttributeDefinition> getAll() {
         return definitions;
+    }
+
+    public static String snapshotJson() {
+        return synchronizedJson;
+    }
+
+    /** Used after resource reload and when a multiplayer client joins/reloads. */
+    public static synchronized void acceptSync(String json) {
+        List<QualityAttributeDefinition> loaded = new ArrayList<>();
+        for (JsonElement element : JsonParser.parseString(json).getAsJsonArray()) {
+            loaded.add(parse(element.getAsJsonObject()));
+        }
+        definitions = List.copyOf(loaded);
+        synchronizedJson = json;
+        cachedItems.clear();
+        cacheReady = false;
     }
 
     private static QualityAttributeDefinition parse(JsonObject json) {
@@ -129,15 +141,15 @@ public class QualityAttributeReloadListener
 
                     case ITEM -> {
                         if (target.id() != null) {
-                            Item item = BuiltInRegistries.ITEM.get(target.id());
-                            items.add(item);
+                            Item item = BuiltInRegistries.ITEM.getValue(target.id());
+                            if (item != null) items.add(item);
                         }
                     }
 
                     case ITEM_TAG -> {
                         if (target.id() != null) {
                             TagKey<Item> tag = TagKey.create(Registries.ITEM, target.id());
-                            BuiltInRegistries.ITEM.holders()
+                            BuiltInRegistries.ITEM.listElements()
                                     .filter(holder -> holder.is(tag))
                                     .forEach(holder -> items.add(holder.value()));
                         }
@@ -145,17 +157,20 @@ public class QualityAttributeReloadListener
 
                     case WEAPON -> {
                         BuiltInRegistries.ITEM.stream().forEach(item -> {
-                            if (item instanceof TieredItem ||
-                                    item instanceof ProjectileWeaponItem) {
-                                items.add(item);
+                            var stack = item.getDefaultInstance();
+                            if (stack.has(DataComponents.WEAPON)
+                                    || stack.has(DataComponents.TOOL)
+                                    || item instanceof ProjectileWeaponItem) {
+                                if (item != null) items.add(item);
                             }
                         });
                     }
 
                     case ARMOR -> {
                         BuiltInRegistries.ITEM.stream().forEach(item -> {
-                            if (item instanceof ArmorItem) {
-                                items.add(item);
+                            var equippable = item.getDefaultInstance().get(DataComponents.EQUIPPABLE);
+                            if (equippable != null && equippable.slot().isArmor()) {
+                                if (item != null) items.add(item);
                             }
                         });
                     }
@@ -170,7 +185,11 @@ public class QualityAttributeReloadListener
         return items;
     }
 
-    public Set<Item> getAllItems() {
+    public synchronized Set<Item> getAllItems() {
+        if (!cacheReady) {
+            cachedItems.addAll(resolveItems());
+            cacheReady = true;
+        }
         return cachedItems;
     }
 }

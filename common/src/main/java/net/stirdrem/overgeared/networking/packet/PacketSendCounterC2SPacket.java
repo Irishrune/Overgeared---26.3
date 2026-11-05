@@ -1,7 +1,6 @@
 package net.stirdrem.overgeared.networking.packet;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -19,6 +18,7 @@ import net.stirdrem.overgeared.OvergearedMod;
 import net.stirdrem.overgeared.block.custom.BaseSmithingAnvilBlock;
 import net.stirdrem.overgeared.block.entity.BaseSmithingAnvilBlockEntity;
 import net.stirdrem.overgeared.util.ModTags;
+import net.stirdrem.overgeared.sound.ModSounds;
 import net.stirdrem.overgeared.util.ParticleUtils;
 
 public record PacketSendCounterC2SPacket(
@@ -26,7 +26,8 @@ public record PacketSendCounterC2SPacket(
         BlockPos pos,
         Identifier hitSound,
         Identifier completeSound,
-        Identifier failedSound
+        Identifier failedSound,
+        int perfect, int good, int missed
 ) implements CustomPacketPayload {
     public static final Identifier ID = OvergearedMod.loc("packet_send_counter");
     public static final CustomPacketPayload.Type<PacketSendCounterC2SPacket> TYPE = new CustomPacketPayload.Type<>(ID);
@@ -36,17 +37,19 @@ public record PacketSendCounterC2SPacket(
                 ByteBufCodecs.STRING_UTF8.encode(buffer, packet.quality);
                 BlockPos.STREAM_CODEC.encode(buffer, packet.pos);
 
-                buffer.writeResourceLocation(packet.hitSound);
-                buffer.writeResourceLocation(packet.completeSound);
-                buffer.writeResourceLocation(packet.failedSound);
+                Identifier.STREAM_CODEC.encode(buffer, packet.hitSound);
+                Identifier.STREAM_CODEC.encode(buffer, packet.completeSound);
+                Identifier.STREAM_CODEC.encode(buffer, packet.failedSound);
+                buffer.writeVarInt(packet.perfect); buffer.writeVarInt(packet.good); buffer.writeVarInt(packet.missed);
             },
             buffer -> new PacketSendCounterC2SPacket(
                     ByteBufCodecs.STRING_UTF8.decode(buffer),
                     BlockPos.STREAM_CODEC.decode(buffer),
 
-                    buffer.readResourceLocation(),
-                    buffer.readResourceLocation(),
-                    buffer.readResourceLocation()
+                    Identifier.STREAM_CODEC.decode(buffer),
+                    Identifier.STREAM_CODEC.decode(buffer),
+                    Identifier.STREAM_CODEC.decode(buffer),
+                    buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt()
             )
     );
 
@@ -63,27 +66,34 @@ public record PacketSendCounterC2SPacket(
             BlockState state = level.getBlockState(pos);
             if (!(state.getBlock() instanceof BaseSmithingAnvilBlock anvilBlock)) return;
 
-            anvilBlock.setQuality(ForgingQuality.fromString(payload.quality));
-
-            // Process the hammer hit on the server (minigame hits come only through this packet)
+            // A packet is not proof of a legitimate hammer strike: validate the
+            // current workstation, its active owner, range and held hammer on
+            // the server before modifying progress or quality.
+            if (!player.isWithinBlockInteractionRange(pos, 0.0D)) return;
             if (!(level.getBlockEntity(pos) instanceof BaseSmithingAnvilBlockEntity anvilBE)) return;
             if (!anvilBE.isMinigameOn()) return;
-
-            // Damage hammer
+            if (!player.getUUID().equals(anvilBE.getOwnerUUID())) return;
             ItemStack mainHand = player.getMainHandItem();
-            if (mainHand.is(ModTags.Items.SMITHING_HAMMERS)) {
-                mainHand.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
-            }
+            if (!mainHand.is(ModTags.Items.SMITHING_HAMMERS)) return;
+
+            if (!(anvilBE instanceof net.stirdrem.overgeared.block.entity.AbstractSmithingAnvilBlockEntity smithing)
+                    || !smithing.recordStrikeCounts(payload.perfect, payload.good, payload.missed)) return;
+            // Calculate the rank from validated cumulative counts, never from the supplied rank string.
+            anvilBlock.setQuality(smithing.getStrikeQuality());
+            mainHand.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
 
             anvilBE.increaseForgingProgress(level, pos, state);
             ParticleUtils.spawnAnvilParticles(level, pos);
 
+            // Wire sound identifiers remain for compatibility with the client
+            // payload, but the server uses its registered forging sounds.
+            // A spoofed client cannot trigger an arbitrary registry sound here.
             if (anvilBE.getHitsRemaining() == 1) {
                 if (anvilBE.isFailedResult()) {
                     level.playSound(
                             null,
                             pos,
-                            BuiltInRegistries.SOUND_EVENT.get(payload.failedSound),
+                            ModSounds.FORGING_FAILED.get(),
                             SoundSource.BLOCKS,
                             1f,
                             1f
@@ -92,7 +102,7 @@ public record PacketSendCounterC2SPacket(
                     level.playSound(
                             null,
                             pos,
-                            BuiltInRegistries.SOUND_EVENT.get(payload.completeSound),
+                            ModSounds.FORGING_COMPLETE.get(),
                             SoundSource.BLOCKS,
                             1f,
                             1f
@@ -102,7 +112,7 @@ public record PacketSendCounterC2SPacket(
                 level.playSound(
                         null,
                         pos,
-                        BuiltInRegistries.SOUND_EVENT.get(payload.hitSound),
+                        ModSounds.ANVIL_HIT.get(),
                         SoundSource.BLOCKS,
                         1f,
                         1f

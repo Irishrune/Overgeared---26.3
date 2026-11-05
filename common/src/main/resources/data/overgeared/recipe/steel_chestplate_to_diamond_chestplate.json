@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:smithing_transform",
+  "template": "overgeared:diamond_upgrade_smithing_template",
+  "base": "overgeared:steel_chestplate",
+  "addition": "minecraft:diamond",
+  "result": {
+    "id": "minecraft:diamond_chestplate",
+    "count": 1
+  }
+}

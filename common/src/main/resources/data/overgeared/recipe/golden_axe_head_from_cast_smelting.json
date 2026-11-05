@@ -1,0 +1,14 @@
+{
+  "type": "overgeared:cast_smelting",
+  "result": {
+    "id": "overgeared:golden_axe_head",
+    "count": 1
+  },
+  "input": {
+    "gold": 27
+  },
+  "experience": 1.0,
+  "cookingtime": 150,
+  "need_polishing": true,
+  "tool_type": "axe"
+}

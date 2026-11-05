@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_equipment": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "overgeared:steel_axe"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_equipment"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "overgeared:treatment/heavy/steel_axe"
+    ]
+  }
+}

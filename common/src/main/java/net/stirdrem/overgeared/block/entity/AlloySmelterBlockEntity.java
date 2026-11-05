@@ -4,10 +4,9 @@ import net.stirdrem.overgeared.recipe.RecipeLookups;
 import net.stirdrem.overgeared.platform.Services;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -26,6 +25,8 @@ import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -96,6 +97,9 @@ public class AlloySmelterBlockEntity extends BaseContainerBlockEntity implements
     // Tick logic
     // --------------------------------------------------
     public static void tick(Level level, BlockPos pos, BlockState state, AlloySmelterBlockEntity be) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return;
+        }
         boolean wasLit = be.burnTime > 0;
         boolean changed = false;
 
@@ -107,12 +111,18 @@ public class AlloySmelterBlockEntity extends BaseContainerBlockEntity implements
         ItemStack fuel = be.itemHandler.getStackInSlot(4);
 
         if (be.burnTime == 0 && be.canSmelt()) {
-            be.maxBurnTime = be.burnTime = Services.PLATFORM.getBurnTime(fuel);
+            be.maxBurnTime = be.burnTime = Services.PLATFORM.getBurnTime(fuel, be.getLootContext(serverLevel));
             if (be.burnTime > 0 && !fuel.isEmpty()) {
                 ItemStack fuelContainer = Services.PLATFORM.getCraftingRemainder(fuel);
                 fuel.shrink(1);
-                if (fuel.isEmpty() && !fuelContainer.isEmpty())
-                    be.itemHandler.setStackInSlot(4, fuelContainer);
+                if (!fuelContainer.isEmpty()) {
+                    if (fuel.isEmpty()) {
+                        be.itemHandler.setStackInSlot(4, fuelContainer);
+                    } else {
+                        // Keep stacked fuel; drop the separate container as vanilla does.
+                        Containers.dropItemStack(serverLevel, pos.getX(), pos.getY(), pos.getZ(), fuelContainer);
+                    }
+                }
                 changed = true;
             }
         }
@@ -369,25 +379,37 @@ public class AlloySmelterBlockEntity extends BaseContainerBlockEntity implements
     // NBT
     // --------------------------------------------------
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        ContainerHelper.saveAllItems(tag, this.inventory, registries);
-        tag.putInt("burnTime", burnTime);
-        tag.putInt("maxBurnTime", maxBurnTime);
-        tag.putInt("cookTime", cookTime);
-        tag.putInt("cookTimeTotal", cookTimeTotal);
-        tag.putFloat("storedXp", storedExperience);
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        ContainerHelper.saveAllItems(output, this.inventory);
+        output.putInt("burnTime", burnTime);
+        output.putInt("maxBurnTime", maxBurnTime);
+        output.putInt("cookTime", cookTime);
+        output.putInt("cookTimeTotal", cookTimeTotal);
+        output.putFloat("storedXp", storedExperience);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        ContainerHelper.loadAllItems(tag, this.inventory, registries);
-        burnTime = tag.getInt("burnTime");
-        maxBurnTime = tag.getInt("maxBurnTime");
-        cookTime = tag.getInt("cookTime");
-        cookTimeTotal = tag.getInt("cookTimeTotal");
-        storedExperience = tag.getFloat("storedXp");
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        ContainerHelper.loadAllItems(input, this.inventory);
+        burnTime = input.getIntOr("burnTime", 0);
+        maxBurnTime = input.getIntOr("maxBurnTime", 0);
+        cookTime = input.getIntOr("cookTime", 0);
+        cookTimeTotal = input.getIntOr("cookTimeTotal", 0);
+        storedExperience = input.getFloatOr("storedXp", 0.0F);
+    }
+
+    /**
+     * Vanilla's 26.3 BlockEntity removal path drops BaseContainerBlockEntity
+     * contents before the block entity is detached. Preserve Overgeared's
+     * additional stored-XP payout here, without dropping its items twice.
+     */
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        spawnExperience(storedExperience);
+        storedExperience = 0.0F;
     }
 
     public void drops() {
@@ -413,7 +435,7 @@ public class AlloySmelterBlockEntity extends BaseContainerBlockEntity implements
     @Override
     public boolean canPlaceItemThroughFace(int index, ItemStack stack, @Nullable Direction direction) {
         if (index == 5) return false;
-        if (index == 4) return Services.PLATFORM.getBurnTime(stack) > 0;
+        if (index == 4) return Services.PLATFORM.isCookingFuel(stack);
         return true;
     }
 

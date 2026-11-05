@@ -6,6 +6,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -31,7 +32,7 @@ import net.stirdrem.overgeared.item.ModItems;
 import net.stirdrem.overgeared.recipe.FletchingRecipe;
 import net.stirdrem.overgeared.recipe.ModRecipeTypes;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Optional;
 
@@ -505,7 +506,7 @@ public class FletchingStationMenu extends AbstractContainerMenu {
                 ItemStack stack = input.removeItemNoUpdate(i);
                 if (!stack.isEmpty()) {
                     if (!player.getInventory().add(stack)) {
-                        player.drop(stack, false);
+                        player.drop(stack, false, Prediction.SERVER_ONLY);
                     }
                 }
             }
@@ -524,7 +525,7 @@ public class FletchingStationMenu extends AbstractContainerMenu {
             return Potions.WATER;
         }
         Identifier location = Identifier.parse(name);
-        Potion potion = BuiltInRegistries.POTION.get(location);
+        Potion potion = BuiltInRegistries.POTION.getValue(location);
         if (potion == null) {
             return Potions.WATER;
         }

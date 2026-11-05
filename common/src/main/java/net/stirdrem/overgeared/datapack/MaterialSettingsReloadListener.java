@@ -3,13 +3,12 @@ package net.stirdrem.overgeared.datapack;
 import com.google.gson.*;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class MaterialSettingsReloadListener extends SimpleJsonResourceReloadListener {
+public class MaterialSettingsReloadListener extends LegacyJsonResourceReloadListener {
 
     public static class MaterialEntry {
         private final String itemOrTag;

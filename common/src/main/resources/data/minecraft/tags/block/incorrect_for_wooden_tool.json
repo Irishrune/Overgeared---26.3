@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "#overgeared:needs_copper_tool",
+    "#minecraft:needs_iron_tool",
+    "#overgeared:needs_steel_tool",
+    "#minecraft:needs_diamond_tool"
+  ]
+}

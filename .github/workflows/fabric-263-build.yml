@@ -1,4 +1,4 @@
-name: Fabric 26.3 source checks and compilation
+name: Fabric 26.3 build and game tests
 on:
   push:
     branches: [main]
@@ -35,13 +35,14 @@ jobs:
           python -m unittest discover -s port-tests -p 'test_*.py' -v 2>&1 | tee -a source-tests.log
           python tools/check_263_namespaces.py 2>&1 | tee -a source-tests.log
           python tools/generate_263_assets.py --check 2>&1 | tee -a source-tests.log
+          python tools/generate_263_gameplay.py --check 2>&1 | tee -a source-tests.log
 
-      - name: Compile the actual Fabric 26.3 mod
+      - name: Build the mod and run dedicated-server game tests
         shell: bash
         run: |
           set -o pipefail
           chmod +x gradlew
-          ./gradlew :fabric:compileJava --console=plain --stacktrace 2>&1 | tee compile-26.3.log
+          ./gradlew :fabric:build :fabric:runGameTest --console=plain --stacktrace 2>&1 | tee compile-26.3.log
 
       - name: Upload diagnostic logs
         if: always()
@@ -51,4 +52,39 @@ jobs:
           path: |
             source-tests.log
             compile-26.3.log
+            fabric/build/reports/
+            fabric/build/gametest/
+            fabric/run*/logs/
+            fabric/build/run*/
           if-no-files-found: warn
+
+      - name: Test client startup and workstation screens
+        shell: bash
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          SDL_VIDEODRIVER: x11
+        run: |
+          set -o pipefail
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dri libglx-mesa0 mesa-vulkan-drivers mesa-utils
+          xvfb-run -a -s '-screen 0 1280x1024x24 +extension GLX' glxinfo -B | tee graphics-26.3.log
+          timeout --signal=TERM --kill-after=30s 5m xvfb-run -a -s '-screen 0 1280x1024x24 +extension GLX' ./gradlew :fabric:runClientGameTest --console=plain --stacktrace 2>&1 | tee client-26.3.log
+
+      - name: Upload client test screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fabric-263-client-diagnostics
+          path: |
+            client-26.3.log
+            graphics-26.3.log
+            fabric/build/run*/
+            fabric/build/gametest/
+            fabric/run*/logs/
+            fabric/run*/screenshots/
+
+      - name: Upload tested Fabric jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: overgeared-fabric-26.3
+          path: fabric/build/libs/*.jar

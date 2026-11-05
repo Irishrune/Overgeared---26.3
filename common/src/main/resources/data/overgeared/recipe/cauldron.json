@@ -1,0 +1,24 @@
+{
+  "type": "overgeared:forging",
+  "category": "misc",
+  "result": {
+    "id": "minecraft:cauldron",
+    "count": 1
+  },
+  "pattern": [
+    "# #",
+    "# #",
+    "###"
+  ],
+  "key": {
+    "#": {
+      "ingredient": "overgeared:steel_plate",
+      "requires_heated": false,
+      "transfer_nbt": false
+    }
+  },
+  "hammering": 5,
+  "tier": "iron",
+  "need_quenching": false,
+  "has_quality": false
+}

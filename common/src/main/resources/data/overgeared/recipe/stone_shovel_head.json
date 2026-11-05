@@ -3,9 +3,7 @@
   "pattern": [
     " x"
   ],
-  "ingredient": {
-    "item": "overgeared:knappable_rock"
-  },
+  "ingredient": "overgeared:knappable_rock",
   "result": {
     "id": "overgeared:stone_shovel_head",
     "Count": 1

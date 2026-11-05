@@ -6,7 +6,6 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.joml.Random;
-import org.joml.Vector3f;
 
 public class ParticleUtils {
     public static void spawnAnvilParticles(Level level, BlockPos pos) {
@@ -21,7 +20,7 @@ public class ParticleUtils {
                 double velocityY = random.nextFloat() * 0.1;
                 double velocityZ = (random.nextFloat() - 0.5) * 0.1;
 
-                serverLevel.sendParticles(new DustParticleOptions(new Vector3f(1.0f, 0.5f, 0.0f), 1.0f),
+                serverLevel.sendParticles(new DustParticleOptions(0xFF8000, 1.0f),
                         pos.getX() + offsetX, pos.getY() + offsetY, pos.getZ() + offsetZ, 1,
                         velocityX, velocityY, velocityZ, 1);
                 serverLevel.sendParticles(ParticleTypes.CRIT,

@@ -308,23 +308,23 @@ public class ServerConfig {
         EXPERT_MAX_USE = builder.comment("Uses required to reach the next quality after Expert").defineInRange("expertMaxUse", 20, 0, 1000);
         WELL_MAX_USE = builder.comment("Uses required to reach the next quality after Well").defineInRange("wellMaxUse", 10, 0, 1000);
         POOR_MAX_USE = builder.comment("Uses required to reach the next quality after Poor").defineInRange("poorMaxUse", 5, 0, 1000);
-        PERFECT_BLUEPRINT_UPGRADE_TO_MASTER = builder.comment("Allow Perfect blueprints to keep leveling up into Master blueprints. If false, Perfect is the max blueprint level.").define("perfectBlueprintUpgradeToMaster", false);
-        PERFECT_MAX_USE = builder.comment("Uses required to reach Master after Perfect (only used when perfectBlueprintUpgradeToMaster is true)").defineInRange("perfectMaxUse", 50, 0, 1000);
+        PERFECT_BLUEPRINT_UPGRADE_TO_MASTER = builder.comment("Allow Perfect blueprints to keep leveling up into Master blueprints. If false, Perfect is the max blueprint level.").define("masterworkBlueprintProgression", true);
+        PERFECT_MAX_USE = builder.comment("Uses required to reach Master after Perfect (only used when masterworkBlueprintProgression is true)").defineInRange("masterworkBlueprintProgressPoints", 30, 1, 1000);
         builder.pop();
 
         builder.push("Durability Bonuses");
-        MASTER_DURABILITY_BONUS = builder.defineInRange("masterDurabilityBonus", 1.6, -5.0, 5.0);
-        PERFECT_DURABILITY_BONUS = builder.defineInRange("perfectDurabilityBonus", 1.5, -5.0, 5.0);
-        EXPERT_DURABILITY_BONUS = builder.defineInRange("expertDurabilityBonus", 1.3, -5.0, 5.0);
+        MASTER_DURABILITY_BONUS = builder.defineInRange("masterDurabilityBonus", 1.3, -5.0, 5.0);
+        PERFECT_DURABILITY_BONUS = builder.defineInRange("perfectDurabilityBonus", 1.2, -5.0, 5.0);
+        EXPERT_DURABILITY_BONUS = builder.defineInRange("expertDurabilityBonus", 1.1, -5.0, 5.0);
         WELL_DURABILITY_BONUS = builder.defineInRange("wellDurabilityBonus", 1, -5.0, 5.0);
-        POOR_DURABILITY_BONUS = builder.defineInRange("poorDurabilityBonus", 0.7, 0, 5.0);
+        POOR_DURABILITY_BONUS = builder.defineInRange("poorDurabilityBonus", 0.8, 0, 5.0);
         builder.pop();
         builder.push("Mining Speed Bonuses");
-        MASTER_MINING_SPEED_BONUS = builder.defineInRange("masterMiningSpeedBonus", 1.5, -5.0, 5.0);
-        PERFECT_MINING_SPEED_BONUS = builder.defineInRange("perfectMiningSpeedBonus", 1.3, -5.0, 5.0);
-        EXPERT_MINING_SPEED_BONUS = builder.defineInRange("expertMiningSpeedBonus", 1.15, -5.0, 5.0);
+        MASTER_MINING_SPEED_BONUS = builder.defineInRange("masterMiningSpeedBonus", 1.15, -5.0, 5.0);
+        PERFECT_MINING_SPEED_BONUS = builder.defineInRange("perfectMiningSpeedBonus", 1.1, -5.0, 5.0);
+        EXPERT_MINING_SPEED_BONUS = builder.defineInRange("expertMiningSpeedBonus", 1.05, -5.0, 5.0);
         WELL_MINING_SPEED_BONUS = builder.defineInRange("wellMiningSpeedBonus", 1, -5.0, 5.0);
-        POOR_MINING_SPEED_BONUS = builder.defineInRange("poorMiningSpeedBonus", 0.7, 0, 5.0);
+        POOR_MINING_SPEED_BONUS = builder.defineInRange("poorMiningSpeedBonus", 0.9, 0, 5.0);
         builder.pop();
 
         builder.push("Item Break Chance");

@@ -37,12 +37,12 @@ public class DeferredHolder<R, T extends R> implements Supplier<T> {
     @SuppressWarnings("unchecked")
     public Holder<R> getDelegate() {
         if (holder == null) {
-            Registry<R> registry = (Registry<R>) BuiltInRegistries.REGISTRY.get(key.registry());
+            Registry<R> registry = (Registry<R>) BuiltInRegistries.REGISTRY.getValue(key.registry());
             if (registry == null) {
                 throw new IllegalStateException("Registry " + key.registry() + " is not present");
             }
-            holder = registry.getHolder(key)
-                    .orElseThrow(() -> new IllegalStateException("Registry entry " + key.location() + " is not registered yet"));
+            holder = registry.get(key)
+                    .orElseThrow(() -> new IllegalStateException("Registry entry " + key.identifier() + " is not registered yet"));
         }
         return holder;
     }
@@ -56,7 +56,7 @@ public class DeferredHolder<R, T extends R> implements Supplier<T> {
     }
 
     public Identifier getId() {
-        return key.location();
+        return key.identifier();
     }
 
     public ResourceKey<R> getKey() {
@@ -65,7 +65,7 @@ public class DeferredHolder<R, T extends R> implements Supplier<T> {
 
     /** The id as a string, like {@code Holder#getRegisteredName}. */
     public String getRegisteredName() {
-        return key.location().toString();
+        return key.identifier().toString();
     }
 
     @Override

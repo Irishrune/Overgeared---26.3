@@ -7,7 +7,7 @@ import net.minecraft.world.entity.Entity;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -171,6 +171,8 @@ public class ModEvents {
     public static void onTooltip(ItemStack stack, List<Component> tooltip) {
         int insertOffset = 1;
 
+        tooltip.addAll(insertOffset, net.stirdrem.overgeared.util.SmithingTreatments.tooltip(stack));
+
         // Add Forging Quality
         ForgingQuality quality = stack.get(ModComponents.FORGING_QUALITY.get());
         if (quality != null) {
@@ -184,7 +186,8 @@ public class ModEvents {
                 default -> null;
             };
             if (qualityComponent != null) {
-                tooltip.add(insertOffset++, qualityComponent);
+                tooltip.add(insertOffset++, qualityComponent.copy().withStyle(quality.getColor()));
+                for (Component line : net.stirdrem.overgeared.util.QualityTooltips.lines(stack)) tooltip.add(insertOffset++, line);
             }
         }
 
@@ -222,7 +225,7 @@ public class ModEvents {
 
         // Smithing Hammer special tooltip
         if (stack.is(ModTags.Items.SMITHING_HAMMERS)) {
-            if (!Screen.hasShiftDown()) {
+            if (!Minecraft.getInstance().options.keyShift.isDown()) {
                 tooltip.add(insertOffset, Component.translatable("tooltip.overgeared.smithing_hammer.hold_shift")
                         .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
             } else {
