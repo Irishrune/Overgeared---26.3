@@ -4,6 +4,7 @@ import net.stirdrem.overgeared.recipe.RecipeLookups;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Prediction;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
@@ -316,7 +317,7 @@ public class RockKnappingMenu extends AbstractContainerMenu {
             }
             if (!player.getInventory().add(result.copy())) {
                 // Drop if inventory is full
-                player.drop(result.copy(), false);
+                player.drop(result.copy(), false, Prediction.SERVER_ONLY);
             }
             resultContainer.setItem(0, ItemStack.EMPTY);
         }
