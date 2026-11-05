@@ -50,7 +50,8 @@ public class PortClientGameTests implements FabricClientGameTest {
                 });
                 // A real player can only interact after the placed workstation is visible.
                 context.waitFor(client -> client.level.getBlockState(pos).is(station.block())
-                        && client.level.getBlockEntity(pos) != null);
+                        && (!(station.block() instanceof net.minecraft.world.level.block.EntityBlock)
+                            || client.level.getBlockEntity(pos) != null));
                 world.getServer().runOnServer(server -> {
                     var player = world.getConnection().getServerPlayer();
                     var level = player.level();
