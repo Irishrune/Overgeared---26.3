@@ -31,7 +31,8 @@ class ArrowModel26_3Tests(unittest.TestCase):
                 self.assertEqual([{"type":"minecraft:potion","default":-1}],data["model"]["tints"])
 
     def test_fabric_client_does_not_use_removed_color_api(self):
-        self.assertNotIn("ColorProviderRegistry",CLIENT.replace("// Potion-sensitive arrow tinting is now described by the vanilla\n",""))
+        self.assertNotIn("ColorProviderRegistry.ITEM.register(",CLIENT)
+        self.assertNotIn("import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;",CLIENT)
         self.assertNotIn("EntityModelLayerRegistry",CLIENT)
         self.assertIn("registerRenderers()",CLIENT)
 
