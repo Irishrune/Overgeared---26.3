@@ -1,6 +1,12 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "overgeared:item/lingering_arrow"
+    "model": "overgeared:item/lingering_arrow",
+    "tints": [
+      {
+        "type": "minecraft:potion",
+        "default": -1
+      }
+    ]
   }
 }
