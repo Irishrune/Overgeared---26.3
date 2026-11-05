@@ -36,5 +36,17 @@ class ForgeQuenchingAndFletchingTests(unittest.TestCase):
         self.assertNotIn("InteractionResult.sidedSuccess(", INTERACTIONS)
         self.assertIn('syncData.getLongOr("anvilPos", 0L)', INTERACTIONS)
 
+    def test_forging_owner_sync_and_limited_crafting_are_263_compatible(self):
+        self.assertIn('sync.store("anvilOwner", UUIDUtil.CODEC, playerUUID)', INTERACTIONS)
+        self.assertIn('syncData.store("anvilOwner", UUIDUtil.CODEC, new UUID(0, 0))', INTERACTIONS)
+        self.assertIn('syncData.read("anvilOwner", UUIDUtil.CODEC).orElse(null)', INTERACTIONS)
+        self.assertIn("owner != null && owner.getMostSignificantBits() == 0", INTERACTIONS)
+        self.assertIn("level.getGameRules().get(GameRules.LIMITED_CRAFTING)", INTERACTIONS)
+        self.assertIn("recipeOpt.isEmpty() || !serverPlayer.getRecipeBook().contains(recipeOpt.get().id())", INTERACTIONS)
+        self.assertIn("SoundEvents.STONE_HIT, SoundSource.BLOCKS", INTERACTIONS)
+        self.assertNotIn("sync.putUUID(", INTERACTIONS)
+        self.assertNotIn("syncData.getUUID(", INTERACTIONS)
+        self.assertNotIn("serverPlayer.getServer()", INTERACTIONS)
+
 if __name__=="__main__":
     unittest.main()
