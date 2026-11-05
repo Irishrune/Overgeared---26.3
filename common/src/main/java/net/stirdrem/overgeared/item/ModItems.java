@@ -6,6 +6,7 @@ import net.stirdrem.overgeared.registry.DeferredItem;
 import net.stirdrem.overgeared.registry.DeferredRegister;
 import net.stirdrem.overgeared.OvergearedMod;
 import net.stirdrem.overgeared.entity.ArrowTier;
+import net.stirdrem.overgeared.components.ModComponents;
 import net.stirdrem.overgeared.util.ModTags;
 import net.stirdrem.overgeared.item.custom.*;
 import net.stirdrem.overgeared.item.EquipmentStatMath;
@@ -84,7 +85,8 @@ public class ModItems {
     public static final DeferredItem<Item> EMPTY_BLUEPRINT = registerSimpleItem("empty_blueprint");
 
     public static final DeferredItem<Item> BLUEPRINT = registerItem("blueprint",
-            key -> new BlueprintItem(new Item.Properties().setId(key)));
+            key -> new BlueprintItem(new Item.Properties().setId(key)
+                    .component(ModComponents.BLUEPRINT_DATA.get(), BlueprintItem.defaultData())));
 
     public static final DeferredItem<Item> STONE_SWORD_BLADE = registerSimpleItem("stone_sword_blade");
     public static final DeferredItem<Item> IRON_SWORD_BLADE = registerSimpleItem("iron_sword_blade");
