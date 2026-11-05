@@ -12,7 +12,7 @@ import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.world.item.ArmorItem;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.crafting.*;
@@ -505,9 +505,12 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
                     }
                 }
 
-                // Default quenching based on whether result is armor
+                // Since 26.3, armor is identified by an equippable component,
+                // not the removed ArmorItem class. Keep the original exemption
+                // from quenching for armor, but not for non-armor equipment.
                 boolean actualNeedQuenching = needQuenching;
-                if (result.create().getItem() instanceof ArmorItem) {
+                var equippable = result.create().get(DataComponents.EQUIPPABLE);
+                if (equippable != null && equippable.slot().isArmor()) {
                     actualNeedQuenching = false;
                 }
 
