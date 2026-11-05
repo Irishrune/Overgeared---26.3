@@ -7,7 +7,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
@@ -52,13 +52,11 @@ public final class OvergearedFabricClient implements ClientModInitializer {
                 ModItems.STEEL_UPGRADE_ARROW.get(),
                 ModItems.DIAMOND_UPGRADE_ARROW.get());
 
-        HudRenderCallback.EVENT.register((guiGraphics, deltaTracker) -> {
-            if (Minecraft.getInstance().options.hideGui) {
-                return;
-            }
-            AnvilMinigameOverlay.INSTANCE.render(guiGraphics, deltaTracker);
-            PopupOverlay.INSTANCE.render(guiGraphics, deltaTracker);
-        });
+        // 26.3 HUD rendering is extracted into deferred GUI render state.
+        // Register each element under its stable ID; the overlay itself
+        // respects F1's hidden-HUD state and preserves the original animation.
+        HudElementRegistry.addLast(AnvilMinigameOverlay.ID, AnvilMinigameOverlay.INSTANCE::render);
+        HudElementRegistry.addLast(PopupOverlay.ID, PopupOverlay.INSTANCE::render);
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> AnvilMinigameEvents.onClientTick());
         ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> ModEvents.onTooltip(stack, lines));
