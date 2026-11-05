@@ -8,6 +8,7 @@ import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.item.ArrowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.Level;
@@ -16,7 +17,7 @@ import net.stirdrem.overgeared.entity.ModEntities;
 import net.stirdrem.overgeared.entity.custom.LingeringArrowEntity;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
+import java.util.function.Consumer;
 
 public class LingeringArrowItem extends ArrowItem {
     private final ArrowTier tier;
@@ -40,10 +41,11 @@ public class LingeringArrowItem extends ArrowItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display,
+                                Consumer<Component> tooltip, TooltipFlag flag) {
         PotionContents potionContents = stack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
         if (!potionContents.equals(PotionContents.EMPTY)) {
-            potionContents.addPotionTooltip(tooltip::add, 0.125F, context.tickRate());
+            PotionContents.addPotionTooltip(potionContents.getAllEffects(), tooltip, 0.125F, context.tickRate());
         }
     }
 
@@ -88,14 +90,14 @@ public class LingeringArrowItem extends ArrowItem {
                         String effectKey = "item.overgeared.arrow.effect." + basePotionId;
                         Component effectComponent = Component.translatable(effectKey);
 
-                        return Component.translatable(getDescriptionId(stack), effectComponent);
+                        return Component.translatable(getDescriptionId(), effectComponent);
                     }
                 }
             }
 
-            return Component.translatable(getDescriptionId(stack) + ".no_effect");
+            return Component.translatable(getDescriptionId() + ".no_effect");
         }
 
-        return Component.translatable(getDescriptionId(stack));
+        return Component.translatable(getDescriptionId());
     }
 }
