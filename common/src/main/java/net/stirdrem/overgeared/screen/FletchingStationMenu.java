@@ -6,6 +6,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -505,7 +506,7 @@ public class FletchingStationMenu extends AbstractContainerMenu {
                 ItemStack stack = input.removeItemNoUpdate(i);
                 if (!stack.isEmpty()) {
                     if (!player.getInventory().add(stack)) {
-                        player.drop(stack, false);
+                        player.drop(stack, false, Prediction.SERVER_ONLY);
                     }
                 }
             }
