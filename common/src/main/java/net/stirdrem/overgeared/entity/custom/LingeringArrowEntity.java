@@ -3,7 +3,8 @@ package net.stirdrem.overgeared.entity.custom;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -26,12 +27,13 @@ import java.util.List;
 public class LingeringArrowEntity extends AbstractArrow {
     private static final EntityDataAccessor<Integer> DATA_POTION_COLOR =
             SynchedEntityData.defineId(LingeringArrowEntity.class, EntityDataSerializers.INT);
-    private final ItemStack referenceStack;
+    private ItemStack referenceStack;
     private boolean cloudSpawned = false;
 
     public LingeringArrowEntity(EntityType<? extends LingeringArrowEntity> type, Level level, LivingEntity shooter, ItemStack stack, @Nullable ItemStack firedFromWeapon) {
         super(type, shooter, level, stack, firedFromWeapon);
-        this.referenceStack = stack;
+        this.referenceStack = stack.copy();
+        this.referenceStack.setCount(1);
         PotionContents potionContents = stack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
         int color = potionContents.getColor();
         this.entityData.set(DATA_POTION_COLOR, color);
@@ -49,17 +51,23 @@ public class LingeringArrowEntity extends AbstractArrow {
     }
 
     @Override
-    public void addAdditionalSaveData(CompoundTag tag) {
-        super.addAdditionalSaveData(tag);
-        tag.putInt("PotionColor", this.entityData.get(DATA_POTION_COLOR));
+    protected void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        output.putInt("PotionColor", this.entityData.get(DATA_POTION_COLOR));
+        if (!referenceStack.isEmpty()) {
+            output.child("overgearedArrow").store(ItemStack.MAP_CODEC, referenceStack);
+        }
     }
 
     @Override
-    public void readAdditionalSaveData(CompoundTag tag) {
-        super.readAdditionalSaveData(tag);
-        if (tag.contains("PotionColor", 99)) {
-            this.entityData.set(DATA_POTION_COLOR, tag.getInt("PotionColor"));
-        }
+    protected void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        this.entityData.set(DATA_POTION_COLOR, input.getIntOr("PotionColor", -1));
+        // Preserve the original arrow's potion for drops and effect clouds
+        // when this entity is loaded from saved chunk data.
+        this.referenceStack = input.child("overgearedArrow")
+                .flatMap(child -> child.read(ItemStack.MAP_CODEC))
+                .orElse(ItemStack.EMPTY);
     }
 
     @Override
@@ -70,7 +78,7 @@ public class LingeringArrowEntity extends AbstractArrow {
     @Override
     protected void onHit(HitResult result) {
         super.onHit(result);
-        if (!level().isClientSide && !this.cloudSpawned && result.getType() != HitResult.Type.MISS) {
+        if (!level().isClientSide() && !this.cloudSpawned && result.getType() != HitResult.Type.MISS) {
             PotionContents potionContents = this.referenceStack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
 
             if (!potionContents.getAllEffects().iterator().hasNext()) {
@@ -127,7 +135,8 @@ public class LingeringArrowEntity extends AbstractArrow {
         PotionContents cloudContents = new PotionContents(
                 potionContents.potion(),
                 potionContents.customColor(),
-                reducedEffects
+                reducedEffects,
+                potionContents.customName()
         );
 
         cloud.setPotionContents(cloudContents);
@@ -153,8 +162,8 @@ public class LingeringArrowEntity extends AbstractArrow {
     @Override
     public void tick() {
         super.tick();
-        if (this.level().isClientSide) {
-            if (this.inGround) {
+        if (this.level().isClientSide()) {
+            if (this.isInGround()) {
                 if (this.inGroundTime % 5 == 0) {
                     this.makeParticle(1);
                 }
