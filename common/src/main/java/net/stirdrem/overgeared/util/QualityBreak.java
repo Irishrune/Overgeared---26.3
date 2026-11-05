@@ -6,6 +6,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.stirdrem.overgeared.ForgingQuality;
@@ -55,7 +56,7 @@ public final class QualityBreak {
                         ? InteractionHand.MAIN_HAND
                         : InteractionHand.OFF_HAND;
 
-                player.onEquippedItemBroken(stack.getItem(), LivingEntity.getSlotForHand(hand));
+                player.onEquippedItemBroken(stack.getItem(), hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
             } else if (entity != null) {
                 entity.level().playSound(
                         null,
