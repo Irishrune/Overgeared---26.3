@@ -206,9 +206,9 @@ public class ToolCastItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display,
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay tooltipDisplay,
             Consumer<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, context, display, tooltip, flag);
+        super.appendHoverText(stack, context, tooltipDisplay, tooltip, flag);
 
         CastData data = stack.getOrDefault(ModComponents.CAST_DATA.get(), CastData.EMPTY);
 
