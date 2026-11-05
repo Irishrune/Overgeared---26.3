@@ -83,7 +83,7 @@ def value(s):
     for method,args in calls(s):
         vals=[value(a) for a in args]
         if method == 'Ingredient.of': return vals[0] if len(vals)==1 else vals
-        if method in ('ItemTags.create','BlockTags.create'): return '#'+vals[0]
+        if method in ('ItemTags.create','BlockTags.create'): return '#'+vals[0].replace('forge:', 'c:', 1)
         if method=='ResourceLocation.fromNamespaceAndPath': return ':'.join(vals)
         if method in ('ResourceLocation.parse','ResourceLocation.tryParse'): return vals[0]
         if method=='OvergearedMod.loc': return 'overgeared:'+vals[0]
@@ -102,6 +102,9 @@ def generate():
         ns,path=id.split(':',1); key=OUT/ns/kind/(path+'.json')
         if key in out and out[key]!=data: raise ValueError('Conflicting generated file '+str(key))
         out[key]=data
+    # Silver comes from optional companion mods; an empty common tag keeps the
+    # heating recipes valid when those mods are absent, without adding a new ore.
+    put('tags/item', 'c:ingots/silver', {'replace':False, 'values':[]})
     # Item tags and block tags are direct declarative chains, including empty extension tags.
     for kind,provider in [('item','ModItemTagGenerator.java'),('block','ModBlockTagGenerator.java')]:
         body=clean((PROVIDERS/provider).read_text()).split('protected void addTags')[1]

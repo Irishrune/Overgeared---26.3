@@ -5,6 +5,9 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.stirdrem.overgeared.block.ModBlocks;
@@ -34,9 +37,8 @@ public class PortClientGameTests implements FabricClientGameTest {
                     var pos = player.blockPosition().offset(2, 0, 0);
                     level.setBlockAndUpdate(pos.below(), Blocks.STONE.defaultBlockState());
                     level.setBlockAndUpdate(pos, station.block().defaultBlockState());
-                    var provider = level.getBlockState(pos).getMenuProvider(level, pos);
-                    if (provider == null) throw new AssertionError("No menu for " + station.screenshot());
-                    player.openMenu(provider);
+                    level.getBlockState(pos).useWithoutItem(level, player,
+                            new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false));
                 });
                 context.waitForScreen(station.screen());
                 context.waitTicks(5);
@@ -54,3 +56,4 @@ public class PortClientGameTests implements FabricClientGameTest {
         }
     }
 }
+
