@@ -36,17 +36,17 @@ public record PacketSendCounterC2SPacket(
                 ByteBufCodecs.STRING_UTF8.encode(buffer, packet.quality);
                 BlockPos.STREAM_CODEC.encode(buffer, packet.pos);
 
-                buffer.writeResourceLocation(packet.hitSound);
-                buffer.writeResourceLocation(packet.completeSound);
-                buffer.writeResourceLocation(packet.failedSound);
+                Identifier.STREAM_CODEC.encode(buffer, packet.hitSound);
+                Identifier.STREAM_CODEC.encode(buffer, packet.completeSound);
+                Identifier.STREAM_CODEC.encode(buffer, packet.failedSound);
             },
             buffer -> new PacketSendCounterC2SPacket(
                     ByteBufCodecs.STRING_UTF8.decode(buffer),
                     BlockPos.STREAM_CODEC.decode(buffer),
 
-                    buffer.readResourceLocation(),
-                    buffer.readResourceLocation(),
-                    buffer.readResourceLocation()
+                    Identifier.STREAM_CODEC.decode(buffer),
+                    Identifier.STREAM_CODEC.decode(buffer),
+                    Identifier.STREAM_CODEC.decode(buffer)
             )
     );
 
@@ -63,17 +63,18 @@ public record PacketSendCounterC2SPacket(
             BlockState state = level.getBlockState(pos);
             if (!(state.getBlock() instanceof BaseSmithingAnvilBlock anvilBlock)) return;
 
-            anvilBlock.setQuality(ForgingQuality.fromString(payload.quality));
-
-            // Process the hammer hit on the server (minigame hits come only through this packet)
+            // A packet is not proof of a legitimate hammer strike: validate the
+            // current workstation, its active owner, range and held hammer on
+            // the server before modifying progress or quality.
+            if (!player.isWithinBlockInteractionRange(pos, 0.0D)) return;
             if (!(level.getBlockEntity(pos) instanceof BaseSmithingAnvilBlockEntity anvilBE)) return;
             if (!anvilBE.isMinigameOn()) return;
-
-            // Damage hammer
+            if (!player.getUUID().equals(anvilBE.getOwnerUUID())) return;
             ItemStack mainHand = player.getMainHandItem();
-            if (mainHand.is(ModTags.Items.SMITHING_HAMMERS)) {
-                mainHand.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
-            }
+            if (!mainHand.is(ModTags.Items.SMITHING_HAMMERS)) return;
+
+            anvilBlock.setQuality(ForgingQuality.fromString(payload.quality));
+            mainHand.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
 
             anvilBE.increaseForgingProgress(level, pos, state);
             ParticleUtils.spawnAnvilParticles(level, pos);
@@ -83,7 +84,7 @@ public record PacketSendCounterC2SPacket(
                     level.playSound(
                             null,
                             pos,
-                            BuiltInRegistries.SOUND_EVENT.get(payload.failedSound),
+                            BuiltInRegistries.SOUND_EVENT.getValue(payload.failedSound),
                             SoundSource.BLOCKS,
                             1f,
                             1f
@@ -92,7 +93,7 @@ public record PacketSendCounterC2SPacket(
                     level.playSound(
                             null,
                             pos,
-                            BuiltInRegistries.SOUND_EVENT.get(payload.completeSound),
+                            BuiltInRegistries.SOUND_EVENT.getValue(payload.completeSound),
                             SoundSource.BLOCKS,
                             1f,
                             1f
@@ -102,7 +103,7 @@ public record PacketSendCounterC2SPacket(
                 level.playSound(
                         null,
                         pos,
-                        BuiltInRegistries.SOUND_EVENT.get(payload.hitSound),
+                        BuiltInRegistries.SOUND_EVENT.getValue(payload.hitSound),
                         SoundSource.BLOCKS,
                         1f,
                         1f
