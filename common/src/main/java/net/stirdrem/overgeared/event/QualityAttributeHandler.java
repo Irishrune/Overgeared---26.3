@@ -1,6 +1,7 @@
 package net.stirdrem.overgeared.event;
 
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
@@ -53,7 +54,7 @@ public class QualityAttributeHandler {
                 if (value == null || value.amount() == 0)
                     continue;
                 Attribute attribute = BuiltInRegistries.ATTRIBUTE
-                        .get(def.attribute());
+                        .getValue(def.attribute());
                 if (attribute == null)
                     continue;
 
@@ -91,7 +92,7 @@ public class QualityAttributeHandler {
                 }
             }
         });
-        return new ItemAttributeModifiers(entries, modifiers.showInTooltip());
+        return new ItemAttributeModifiers(entries);
     }
 
     public static boolean matches(ItemStack stack, List<QualityTarget> targets) {
@@ -100,14 +101,16 @@ public class QualityAttributeHandler {
         for (QualityTarget target : targets) {
             switch (target.type()) {
                 case WEAPON -> {
-                    if (item instanceof TieredItem ||
-                            item instanceof ProjectileWeaponItem) {
+                    if (stack.has(DataComponents.WEAPON)
+                            || stack.has(DataComponents.TOOL)
+                            || item instanceof ProjectileWeaponItem) {
                         return true;
                     }
                 }
 
                 case ARMOR -> {
-                    if (item instanceof ArmorItem) {
+                    var equippable = stack.get(DataComponents.EQUIPPABLE);
+                    if (equippable != null && equippable.slot().isArmor()) {
                         return true;
                     }
                 }
