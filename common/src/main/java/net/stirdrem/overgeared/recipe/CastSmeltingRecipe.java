@@ -5,10 +5,13 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.crafting.*;
@@ -24,7 +27,7 @@ import net.stirdrem.overgeared.util.ModTags;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CastSmeltingRecipe extends SmeltingRecipe {
+public class CastSmeltingRecipe extends AbstractCookingRecipe {
     private final Map<String, Integer> requiredMaterials;
     private final String toolType;
     private final boolean needPolishing;
@@ -32,7 +35,7 @@ public class CastSmeltingRecipe extends SmeltingRecipe {
     public CastSmeltingRecipe(Recipe.CommonInfo commonInfo, AbstractCookingRecipe.CookingBookInfo bookInfo,
                               Map<String, Integer> requiredMaterials, String toolType, ItemStackTemplate result,
                               boolean needPolishing, float experience, int cookingTime) {
-        super(commonInfo, bookInfo, Ingredient.of(ModTags.Items.USABLE_TOOL_CAST), result, experience, cookingTime);
+        super(commonInfo, bookInfo, Ingredient.of(BuiltInRegistries.ITEM.get(ModTags.Items.USABLE_TOOL_CAST).orElseThrow()), result, experience, cookingTime);
 
         this.requiredMaterials = requiredMaterials;
         this.toolType = toolType;
@@ -41,7 +44,7 @@ public class CastSmeltingRecipe extends SmeltingRecipe {
 
     // Display-only placeholder. Exact cast contents are checked in matches(), not in Ingredient.
     public NonNullList<Ingredient> getIngredients() {
-        return NonNullList.withSize(1, Ingredient.of(ModTags.Items.USABLE_TOOL_CAST));
+        return NonNullList.withSize(1, Ingredient.of(BuiltInRegistries.ITEM.get(ModTags.Items.USABLE_TOOL_CAST).orElseThrow()));
     }
 
     public float getExperience() { return experience(); }
@@ -153,6 +156,27 @@ public class CastSmeltingRecipe extends SmeltingRecipe {
         return needPolishing;
     }
 
+    // Use the vanilla furnace recipe type so the existing furnace continues to
+    // discover these recipes. The serializer remains Overgeared's own.
+    @Override
+    public RecipeType<? extends AbstractCookingRecipe> getType() {
+        return RecipeType.SMELTING;
+    }
+
+    @Override
+    protected Item furnaceIcon() {
+        return Items.FURNACE;
+    }
+
+    @Override
+    public RecipeBookCategory recipeBookCategory() {
+        return switch (category()) {
+            case BLOCKS -> RecipeBookCategories.FURNACE_BLOCKS;
+            case FOOD -> RecipeBookCategories.FURNACE_FOOD;
+            case MISC -> RecipeBookCategories.FURNACE_MISC;
+        };
+    }
+
     @Override
     public RecipeSerializer<CastSmeltingRecipe> getSerializer() {
         return ModRecipeSerializers.CAST_SMELTING.get();
@@ -195,8 +219,8 @@ public class CastSmeltingRecipe extends SmeltingRecipe {
             buffer.writeUtf(recipe.toolType);
             ItemStackTemplate.STREAM_CODEC.encode(buffer, recipe.result());
             buffer.writeBoolean(recipe.needPolishing);
-            buffer.writeFloat(recipe.experience);
-            buffer.writeVarInt(recipe.cookingTime);
+            buffer.writeFloat(recipe.experience());
+            buffer.writeVarInt(recipe.cookingTime());
         }
 
     }
