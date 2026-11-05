@@ -1,3 +1,17 @@
+# Current status — Phases 23–25 (2026-11-04)
+
+**Overgeared is not yet buildable on Fabric 26.3 and must NOT be installed in the Forever World.** Ongoing draft PR: https://github.com/Irishrune/Overgeared---26.3/pull/1
+
+- The Minecraft 26.3 workstation block lifecycle was migrated from removed `onRemove` callbacks to `affectNeighborsAfterRemoval` and block-entity `preRemoveSideEffects`. The casting, alloy and nether-alloy smelters retain automatic vanilla container inventory drops plus explicit stored-XP payout; custom item-handler smithing anvils drop their contents and clear minigame ownership. Updated state properties use `EnumProperty<Direction>`; the falling-anvil neighbour tick and player hammer interaction use the new block signatures.
+- Deferred registry holders use the current `Registry.get`/`getValue` and `ResourceKey.identifier()` APIs. Isolated Java registration stubs and assertions were migrated in tandem.
+- Hammer hit packet serialization now uses `Identifier.STREAM_CODEC`. On the server, a packet is rejected unless the player is within reach, currently owns an active forge minigame, and holds a smithing hammer. Sound playback uses registered server-defined sound events, not client-provided IDs. These are source-level safeguards; actual networking and multiplayer behavior still require runtime testing.
+- Forge recipes retain their armor-only quenching exemption with `EQUIPPABLE` components. Fletching potion lookup uses `Registry.getValue`. Fletching and grinding/knapping/tipping item drop and swing callbacks use 26.3 APIs; forging ownership sync uses `CompoundTag.store/read` with `UUIDUtil.CODEC`, and limited-crafting checks use `RecipeHolder.id()`.
+- Regression modules: `port-tests/test_phase23_workstation_blocks.py`, `port-tests/test_phase24_registry_and_hammer_packet.py`, `port-tests/test_phase25_forging_and_fletching.py`.
+- **Verified CI milestones:** Phase 23: **84/84** source tests passed, `:fabric:compileJava` still failed with **572** javac diagnostics; phase 24: **88/88** passed, **554** errors; subsequent phase 25 intermediate run: **92/92** passed, **537** javac errors. Phase 25's subsequent UUID-sync updates require fresh CI verification. Compilation counts represent compiler diagnostics, not distinct runtime defects.
+- Remaining: real successful build and Minecraft startup; GUI/renderer API updates, recipe-book categories, projectiles, advancements and mixins, plus end-to-end forging, saved data and dedicated-server runtime testing. Keep this draft separate from `main`.
+
+---
+
 # Current status — Phases 20–22 (2026-11-04)
 
 **This is a source migration in draft PR #1, not a runnable Fabric 26.3 mod.** Do not load it into the Forever World.
