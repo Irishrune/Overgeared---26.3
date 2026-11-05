@@ -1,6 +1,12 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "overgeared:item/iron_arrow"
+    "model": "overgeared:item/iron_arrow",
+    "tints": [
+      {
+        "type": "minecraft:potion",
+        "default": -1
+      }
+    ]
   }
 }
