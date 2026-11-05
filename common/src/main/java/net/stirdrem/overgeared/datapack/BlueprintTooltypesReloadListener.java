@@ -3,7 +3,6 @@ package net.stirdrem.overgeared.datapack;
 import com.google.gson.*;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.stirdrem.overgeared.OvergearedMod;
 import net.stirdrem.overgeared.item.ToolTypeRegistry;
@@ -11,7 +10,7 @@ import net.stirdrem.overgeared.item.ToolTypeRegistry;
 import java.util.*;
 
 public class BlueprintTooltypesReloadListener
-        extends SimpleJsonResourceReloadListener {
+        extends LegacyJsonResourceReloadListener {
 
     public static final Map<Identifier, BlueprintTooltypesData> DATA = new HashMap<>();
     
