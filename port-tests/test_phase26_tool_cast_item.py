@@ -30,9 +30,9 @@ class ToolCast26_3Tests(unittest.TestCase):
         self.assertIn("player.drop(inputItem.copy(), false, Prediction.SERVER_ONLY)", SRC)
 
     def test_263_tooltip_consumer_retains_cast_readout(self):
-        self.assertIn("Item.TooltipContext context, TooltipDisplay display,", SRC)
+        self.assertIn("Item.TooltipContext context, TooltipDisplay tooltipDisplay,", SRC)
         self.assertIn("Consumer<Component> tooltip, TooltipFlag flag)", SRC)
-        self.assertIn("super.appendHoverText(stack, context, display, tooltip, flag)", SRC)
+        self.assertIn("super.appendHoverText(stack, context, tooltipDisplay, tooltip, flag)", SRC)
         self.assertIn("tooltip.accept(", SRC)
         self.assertNotIn("tooltip.add(", SRC)
         self.assertIn("tooltip.overgeared.tool_cast.quality", SRC)
