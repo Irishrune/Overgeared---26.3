@@ -22,6 +22,9 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.util.Prediction;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerLevelAccess;
@@ -309,7 +312,7 @@ public class ModItemInteractEvents {
         }
 
         event.setCanceled(true);
-        event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide()));
+        event.setCancellationResult(InteractionResult.SUCCESS);
     }
 
     private static void onUseFletching(PlayerInteractEvent.RightClickBlock event, Player player, Level level) {
@@ -327,7 +330,7 @@ public class ModItemInteractEvents {
         );
         player.openMenu(provider);
 
-        event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide()));
+        event.setCancellationResult(InteractionResult.SUCCESS);
         event.setCanceled(true);
     }
 
@@ -340,7 +343,7 @@ public class ModItemInteractEvents {
         if (waterLevel <= 0) return;
         HeatedItem.setCooledSingle(heldItem, player);
 
-        event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide()));
+        event.setCancellationResult(InteractionResult.SUCCESS);
         event.setCanceled(true);
     }
 
@@ -377,7 +380,7 @@ public class ModItemInteractEvents {
                 }
                 stack.shrink(1);
                 if (!player.getInventory().add(polishedItem)) {
-                    player.drop(polishedItem, false);
+                    player.drop(polishedItem, false, Prediction.SERVER_ONLY);
                 }
             } else {
                 stack.set(ModComponents.POLISHED.get(), true);
@@ -488,21 +491,21 @@ public class ModItemInteractEvents {
         if (level.getRandom().nextFloat() < tool.breakChance()) {
 
             if (heldItem.isDamageableItem()) {
-                heldItem.hurtAndBreak(1, player, LivingEntity.getSlotForHand(event.getHand()));
+                heldItem.hurtAndBreak(1, player, event.getHand() == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
             } else {
                 heldItem.shrink(1);
             }
 
             level.playSound(null, player.blockPosition(),
-                    SoundEvents.ITEM_BREAK, SoundSource.PLAYERS,
+                    SoundEvents.ITEM_BREAK.value(), SoundSource.PLAYERS,
                     0.8F, 1.0F);
         } else {
             level.playSound(null, pos,
-                    SoundEvents.STONE_HIT, SoundSource.BLOCKS,
+                    SoundEvents.STONE_HIT.value(), SoundSource.BLOCKS,
                     1.0F, 1.0F);
         }
 
-        player.swing(event.getHand(), true);
+        player.swing(event.getHand(), SwingAnimation.DEFAULT, true);
         event.setCancellationResult(InteractionResult.SUCCESS);
         event.setCanceled(true);
     }
@@ -515,7 +518,7 @@ public class ModItemInteractEvents {
                 owner = null;
             }
         }
-        BlockPos pos = BlockPos.of(syncData.getLong("anvilPos"));
+        BlockPos pos = BlockPos.of(syncData.getLongOr("anvilPos", 0L));
         ClientAnvilMinigameData.putOccupiedAnvil(pos, owner);
 
         //  Only start minigame if this client is the new owner and it was waiting
@@ -639,7 +642,7 @@ public class ModItemInteractEvents {
                 player.setItemInHand(player.getUsedItemHand(), cooledIngot);
             } else {
                 if (!player.getInventory().add(cooledIngot)) {
-                    player.drop(cooledIngot, false);
+                    player.drop(cooledIngot, false, Prediction.SERVER_ONLY);
                 }
             }
 
@@ -772,7 +775,7 @@ public class ModItemInteractEvents {
             usedHand.shrink(1);
             player.setItemInHand(hand, usedHand);
             if (!player.getInventory().add(resultArrow)) {
-                player.drop(resultArrow, false);
+                player.drop(resultArrow, false, Prediction.SERVER_ONLY);
             }
         }
 
