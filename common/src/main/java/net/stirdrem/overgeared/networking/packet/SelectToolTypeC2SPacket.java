@@ -46,7 +46,7 @@ public record SelectToolTypeC2SPacket(String toolTypeId, int containerId) implem
                     menu.broadcastChanges(); // ensure client sync
                 } else {
                     OvergearedMod.LOGGER.warn("Player '{}' is not in BlueprintWorkbenchMenu, but in {}",
-                            player.getGameProfile().getName(),
+                            player.getGameProfile().name(),
                             player.containerMenu.getClass().getSimpleName());
                 }
             } else {
