@@ -5,7 +5,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -23,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class QualityAttributeReloadListener
-        extends SimpleJsonResourceReloadListener {
+        extends LegacyJsonResourceReloadListener {
 
     public static final QualityAttributeReloadListener INSTANCE =
             new QualityAttributeReloadListener();
