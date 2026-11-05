@@ -184,7 +184,8 @@ public class ModEvents {
                 default -> null;
             };
             if (qualityComponent != null) {
-                tooltip.add(insertOffset++, qualityComponent);
+                tooltip.add(insertOffset++, qualityComponent.copy().withStyle(quality.getColor()));
+                for (Component line : net.stirdrem.overgeared.util.QualityTooltips.lines(stack)) tooltip.add(insertOffset++, line);
             }
         }
 

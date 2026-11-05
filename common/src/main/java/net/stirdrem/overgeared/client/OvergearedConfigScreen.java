@@ -1116,10 +1116,10 @@ public class OvergearedConfigScreen extends Screen {
     }
 
     private void resetDurabilityBonuses() {
-        setDouble("Durability Bonuses.masterDurabilityBonus", 1.6);
-        setDouble("Durability Bonuses.perfectDurabilityBonus", 1.5);
-        setDouble("Durability Bonuses.expertDurabilityBonus", 1.3);
+        setDouble("Durability Bonuses.masterDurabilityBonus", 1.3);
+        setDouble("Durability Bonuses.perfectDurabilityBonus", 1.2);
+        setDouble("Durability Bonuses.expertDurabilityBonus", 1.1);
         setDouble("Durability Bonuses.wellDurabilityBonus", 1.0);
-        setDouble("Durability Bonuses.poorDurabilityBonus", 0.7);
+        setDouble("Durability Bonuses.poorDurabilityBonus", 0.8);
     }
 }

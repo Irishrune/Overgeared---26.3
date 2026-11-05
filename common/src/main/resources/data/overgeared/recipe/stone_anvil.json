@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "###",
+    " # ",
+    " # "
+  ],
+  "key": {
+    "#": "minecraft:stone"
+  },
+  "result": {
+    "id": "overgeared:stone_anvil",
+    "count": 1
+  }
+}

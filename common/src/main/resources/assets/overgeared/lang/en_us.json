@@ -140,7 +140,7 @@
   "tooltip.overgeared.expert": "Expertly Forged",
   "tooltip.overgeared.well": "Well Forged",
   "tooltip.overgeared.poor": "Poorly Forged",
-  "tooltip.overgeared.smithing_hammer.advanced_tooltip.line1": "§7Right click the §f§lSmithing Anvil§7 to start forging when you have a valid recipe.",
+  "tooltip.overgeared.smithing_hammer.advanced_tooltip.line1": "Sneak + right-click the Smithing Anvil to begin quality forging. Release Sneak and right-click to strike.",
   "tooltip.overgeared.smithing_hammer.advanced_tooltip.line2": "§7Right click off the §f§lSmithing Anvil§7 to stop forging.",
   "tooltip.overgeared.smithing_hammer.advanced_tooltip.line3": "§7Crouch right click on a stone block to convert to a §f§lStone Smithing Anvil§7.",
   "tooltip.overgeared.smithing_hammer.advanced_tooltip.line4": "§7Crouch right click on an Anvil block to convert to a §f§lSmithing Anvil§7.",
@@ -296,6 +296,18 @@
   "cast.overgeared.nether_tool_cast": "Nether %s Cast",
   "overgeared.container.recipe_book.forgeable": "Forgeable",
   "tooltip.overgeared.item_broken": "Broken",
-  "gui.overgeared.jei.category.drafting": "Drafting"
+  "gui.overgeared.jei.category.drafting": "Drafting",
+  "tooltip.overgeared.quality.durability": "Quality durability: %s",
+  "tooltip.overgeared.quality.mining": "Quality mining speed: %s (suitable blocks)",
+  "tooltip.overgeared.quality.uses": "Durability: %s / %s",
+  "tooltip.overgeared.quality.attribute": "Quality: %s %s on this item",
+  "tooltip.overgeared.quality.part": "Quality carries into equipment when properly finished and assembled.",
+  "tooltip.overgeared.quality.inactive": "Quality bonuses inactive while broken.",
+  "message.overgeared.ingredients_mismatch": "No matching recipe. Check the ingredients, heating and layout in the anvil recipe book.",
+  "message.overgeared.missing_blueprint": "This recipe needs a %s blueprint in the blueprint slot.",
+  "message.overgeared.wrong_blueprint": "Wrong blueprint. Use a matching %s blueprint, or remove it for recipes without one.",
+  "message.overgeared.anvil_tier": "This recipe requires a %s anvil or better.",
+  "message.overgeared.output_blocked": "Clear the output slot before forging this recipe.",
+  "message.overgeared.direct_hammering": "This recipe uses direct hammering. Release Sneak and right-click with your hammer; no timing bar is needed.",
+  "message.overgeared.hammer_progress": "Hammer hits remaining: %s"
 }
-

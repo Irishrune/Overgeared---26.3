@@ -4,7 +4,12 @@
   "version": "1.0.0",
   "environment": "*",
   "entrypoints": {
-    "fabric-gametest": ["net.stirdrem.overgeared.test.PortGameTests"],
-    "fabric-client-gametest": ["net.stirdrem.overgeared.test.PortClientGameTests"]
+    "fabric-gametest": [
+      "net.stirdrem.overgeared.test.PortGameTests",
+      "net.stirdrem.overgeared.test.OptionalSmithingGameTests"
+    ],
+    "fabric-client-gametest": [
+      "net.stirdrem.overgeared.test.PortClientGameTests"
+    ]
   }
 }

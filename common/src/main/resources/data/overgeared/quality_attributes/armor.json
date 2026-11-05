@@ -1,30 +1,30 @@
 {
-  "attribute": "minecraft:generic.armor",
+  "attribute": "minecraft:armor",
   "targets": [
     {
-      "type": "item_all"
+      "type": "armor"
     }
   ],
   "qualities": {
     "poor": {
-      "operation": "add",
-      "amount": -1.0
+      "operation": "mult_base",
+      "amount": -0.1
     },
     "well": {
-      "operation": "add",
-      "amount": 0.0
+      "operation": "mult_base",
+      "amount": 0
     },
     "expert": {
-      "operation": "add",
-      "amount": 1.0
+      "operation": "mult_base",
+      "amount": 0.05
     },
     "perfect": {
-      "operation": "add",
-      "amount": 1.5
+      "operation": "mult_base",
+      "amount": 0.1
     },
     "master": {
-      "operation": "add",
-      "amount": 2.0
+      "operation": "mult_base",
+      "amount": 0.15
     }
   }
 }

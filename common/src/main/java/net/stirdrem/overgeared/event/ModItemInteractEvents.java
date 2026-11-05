@@ -210,7 +210,7 @@ public class ModItemInteractEvents {
         if (!anvilBE.hasRecipe()) {
             if (crouchRequired && player.isCrouching()) {
                 ((ServerPlayer) player).sendSystemMessage(
-                        Component.translatable("message.overgeared.no_recipe").withStyle(ChatFormatting.RED), true);
+                        anvilBE.forgingProblem().copy().withStyle(ChatFormatting.RED), true);
                 event.setCanceled(true);
                 event.setCancellationResult(InteractionResult.FAIL);
             }
@@ -219,7 +219,7 @@ public class ModItemInteractEvents {
         if (!anvilBE.hasQuality() && !anvilBE.needsMinigame()) {
             if (crouchRequired && player.isCrouching()) {
                 ((ServerPlayer) player).sendSystemMessage(
-                        Component.translatable("message.overgeared.item_has_no_quality").withStyle(ChatFormatting.RED), true);
+                        Component.translatable("message.overgeared.direct_hammering").withStyle(ChatFormatting.YELLOW), true);
                 event.setCanceled(true);
                 event.setCancellationResult(InteractionResult.FAIL);
             }

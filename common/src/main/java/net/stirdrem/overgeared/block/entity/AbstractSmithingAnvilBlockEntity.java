@@ -502,6 +502,25 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
                 && canInsertAmountIntoOutputSlot(resultStack.getCount());
     }
 
+    /** Server-only diagnosis: clients do not possess the recipe database. */
+    public Component forgingProblem() {
+        RecipeWrapper input = new RecipeWrapper(itemHandler);
+        var candidates = net.stirdrem.overgeared.recipe.RecipeLookups.all(level, net.stirdrem.overgeared.recipe.ModRecipeTypes.FORGING.get()).stream()
+                .map(RecipeHolder::value).filter(recipe -> recipe.matchesIngredients(input)).toList();
+        if (candidates.isEmpty()) return Component.translatable("message.overgeared.ingredients_mismatch");
+        var matching = candidates.stream().filter(recipe -> recipe.matches(input, level)).findFirst();
+        if (matching.isEmpty()) {
+            String types = String.join(", ", candidates.getFirst().getBlueprintTypes());
+            return Component.translatable(itemHandler.getStackInSlot(BLUEPRINT_SLOT).isEmpty()
+                    ? "message.overgeared.missing_blueprint" : "message.overgeared.wrong_blueprint", types);
+        }
+        AnvilTier required = AnvilTier.fromDisplayName(matching.get().getAnvilTier());
+        if (required != null && !anvilTier.isAtLeast(required)) {
+            return Component.translatable("message.overgeared.anvil_tier", Component.translatable(required.getLang()));
+        }
+        return Component.translatable("message.overgeared.output_blocked");
+    }
+
     @Override
     public Optional<ForgingRecipe> getCurrentRecipe() {
         return getCurrentRecipeHolder().map(RecipeHolder::value);

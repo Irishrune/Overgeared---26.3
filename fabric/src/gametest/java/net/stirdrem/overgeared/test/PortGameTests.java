@@ -77,7 +77,7 @@ public class PortGameTests {
         head.set(ModComponents.CREATOR.get(), "Port test smith");
         head.set(ModComponents.POLISHED.get(), true);
         CraftingInput assembly = CraftingInput.of(2, 1, List.of(new ItemStack(Items.STICK), head));
-        var assemble = (OvergearedShapelessRecipe)recipe(test, "minecraft:iron_pickaxe");
+        var assemble = (OvergearedShapelessRecipe)recipe(test, "overgeared:iron_pickaxe");
         check(assemble.display().size() == 1, "Tool assembly missing from vanilla recipe book");
         check(assemble.matches(assembly, test.getLevel()), "Head and handle cannot be assembled");
         ItemStack tool = assemble.assemble(assembly);
@@ -163,14 +163,23 @@ public class PortGameTests {
         test.succeed();
     }
 
-    @GameTest public void disabledVanillaShortcutsRemainUncraftable(GameTestHelper test) {
-        for (String id : List.of("minecraft:diamond_pickaxe", "minecraft:tipped_arrow", "minecraft:iron_ingot_from_blasting_raw_iron")) {
-            var disabled = recipe(test, id);
-            check(disabled instanceof DisabledRecipe, "Vanilla shortcut re-enabled: " + id);
-            check(disabled.display().isEmpty() && disabled.isSpecial(), "Disabled recipe appears in recipe book");
-            check(!((DisabledRecipe)disabled).matches(CraftingInput.of(1, 1, List.of(new ItemStack(Items.BARRIER))), test.getLevel()),
-                    "Disabled recipe has a crafting match");
+    @GameTest public void vanillaRecipesRemainAvailable(GameTestHelper test) {
+        for (String id : List.of("stone_pickaxe", "iron_pickaxe", "golden_pickaxe", "diamond_pickaxe",
+                "iron_chestplate", "golden_chestplate", "diamond_chestplate", "bucket", "cauldron",
+                "shears", "flint_and_steel", "arrow", "spectral_arrow", "tipped_arrow", "netherite_ingot")) {
+            check(recipe(test, "minecraft:" + id) instanceof CraftingRecipe, "Vanilla crafting replaced: " + id);
         }
+        var blast = recipe(test, "minecraft:iron_ingot_from_blasting_raw_iron");
+        check(blast instanceof BlastingRecipe, "Vanilla raw iron blasting replaced");
+        check(((BlastingRecipe)blast).assemble(new SingleRecipeInput(new ItemStack(Items.RAW_IRON))).is(Items.IRON_INGOT),
+                "Vanilla blast output changed");
+        CraftingInput input = CraftingInput.of(3, 3, List.of(new ItemStack(Items.IRON_INGOT), new ItemStack(Items.IRON_INGOT),
+                new ItemStack(Items.IRON_INGOT), ItemStack.EMPTY, new ItemStack(Items.STICK), ItemStack.EMPTY,
+                ItemStack.EMPTY, new ItemStack(Items.STICK), ItemStack.EMPTY));
+        var vanilla = test.getLevel().recipeAccess().getRecipeFor(RecipeType.CRAFTING, input, test.getLevel()).orElseThrow();
+        var result = vanilla.value().assemble(input);
+        check(result.is(Items.IRON_PICKAXE) && !result.has(ModComponents.FORGING_QUALITY.get()),
+                "Vanilla crafting must produce a normal pickaxe");
         test.succeed();
     }
 

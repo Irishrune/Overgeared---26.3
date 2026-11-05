@@ -21,6 +21,15 @@ import static net.stirdrem.overgeared.util.BrokenHelper.isBroken;
 
 @Mixin(ItemStack.class)
 public abstract class ItemStackMixin {
+    @Inject(method = {"getHoverName", "getStyledHoverName", "getDisplayName"}, at = @At("RETURN"), cancellable = true)
+    private void overgeared$qualityName(CallbackInfoReturnable<net.minecraft.network.chat.Component> cir) {
+        ForgingQuality quality = ((ItemStack) (Object) this).get(ModComponents.FORGING_QUALITY.get());
+        if (quality != null && quality != ForgingQuality.NONE && quality != ForgingQuality.WELL) {
+            // Presentation only: retain translations, custom names, enchantments and saved components.
+            cir.setReturnValue(cir.getReturnValue().copy().withStyle(quality.getColor()));
+        }
+    }
+
     @Inject(
             method = "getDestroySpeed",
             at = @At("RETURN"),

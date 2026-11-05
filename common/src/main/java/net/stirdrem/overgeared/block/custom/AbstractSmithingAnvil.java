@@ -203,8 +203,12 @@ public abstract class AbstractSmithingAnvil extends BaseSmithingAnvilBlock imple
                     }
 
                     // Process the hammer hit
+                    anvil.setPlayer(player);
+                    int remaining = Math.max(0, anvil.getRequiredProgress() - anvil.getProgress() - 1);
                     held.hurtAndBreak(1, player, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
                     anvil.increaseForgingProgress(level, pos, state);
+                    ((ServerPlayer) player).sendSystemMessage(Component.translatable("message.overgeared.hammer_progress",
+                            remaining), true);
                     ParticleUtils.spawnAnvilParticles(level, pos);
 
                     // Play appropriate sound based on hits remaining

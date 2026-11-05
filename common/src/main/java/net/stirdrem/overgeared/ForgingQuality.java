@@ -16,11 +16,11 @@ import java.util.Locale;
 import java.util.function.Supplier;
 
 public enum ForgingQuality implements StringRepresentable {
-    POOR("poor", ChatFormatting.RED, 10, () -> ServerConfig.POOR_MAX_USE),
-    WELL("well", ChatFormatting.YELLOW, 15, () -> ServerConfig.WELL_MAX_USE),
-    EXPERT("expert", ChatFormatting.BLUE, 20, () -> ServerConfig.EXPERT_MAX_USE),
-    PERFECT("perfect", ChatFormatting.GOLD, 40, () -> ServerConfig.PERFECT_MAX_USE),
-    MASTER("master", ChatFormatting.LIGHT_PURPLE, 30, null), // Final tier
+    POOR("poor", ChatFormatting.DARK_RED, 10, () -> ServerConfig.POOR_MAX_USE),
+    WELL("well", ChatFormatting.WHITE, 15, () -> ServerConfig.WELL_MAX_USE),
+    EXPERT("expert", ChatFormatting.GREEN, 20, () -> ServerConfig.EXPERT_MAX_USE),
+    PERFECT("perfect", ChatFormatting.LIGHT_PURPLE, 40, () -> ServerConfig.PERFECT_MAX_USE),
+    MASTER("master", ChatFormatting.GOLD, 30, null), // Final tier
     NONE("none", ChatFormatting.GRAY, 0, null);
 
     private final String displayName;

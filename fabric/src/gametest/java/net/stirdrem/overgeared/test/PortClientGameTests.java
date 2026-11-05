@@ -86,6 +86,7 @@ public class PortClientGameTests implements FabricClientGameTest {
                 System.out.println("Overgeared client test: passed " + station.screenshot());
             }
             forgeCopperBlade(context, world);
+            checkQualityTooltips(context);
         }
     }
 
@@ -149,6 +150,51 @@ public class PortClientGameTests implements FabricClientGameTest {
             }
         });
         System.out.println("Overgeared client test: passed copper blade forging through player input");
+        // Copper plates use normal hammering, which must also work on stone.
+        world.getServer().runOnServer(server -> {
+            var player = world.getConnection().getServerPlayer();
+            var anvil = (AbstractSmithingAnvilBlockEntity) player.level().getBlockEntity(pos);
+            anvil.getItemHandler().setStackInSlot(10, ItemStack.EMPTY);
+            anvil.getItemHandler().setStackInSlot(0, new ItemStack(net.minecraft.world.item.Items.COPPER_INGOT));
+        });
+        context.waitTicks(5);
+        for (int hit = 1; hit <= 3; hit++) {
+            int expectedHits = hit;
+            context.getInput().lookAt(pos);
+            context.waitTicks(5);
+            context.getInput().pressKey(options -> options.keyUse);
+            world.getConnection().waitForServerboundPackets();
+            world.getServer().waitFor(server -> {
+                var player = world.getConnection().getServerPlayer();
+                var anvil = (AbstractSmithingAnvilBlockEntity) player.level().getBlockEntity(pos);
+                return player.getMainHandItem().getDamageValue() == 3 + expectedHits
+                        && (expectedHits < 3 ? anvil.getProgress() == expectedHits
+                            : anvil.getItemHandler().getStackInSlot(10).is(ModItems.COPPER_PLATE.get()));
+            });
+        }
+        System.out.println("Overgeared client test: passed direct copper plate hammering on stone");
+    }
+
+    private void checkQualityTooltips(ClientGameTestContext context) {
+        context.runOnClient(client -> {
+            var stack = new ItemStack(net.minecraft.world.item.Items.IRON_PICKAXE);
+            stack.set(net.stirdrem.overgeared.components.ModComponents.FORGING_QUALITY.get(), net.stirdrem.overgeared.ForgingQuality.MASTER);
+            var lines = stack.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.of(client.level), client.player,
+                    net.minecraft.world.item.TooltipFlag.NORMAL);
+            if (lines.getFirst().getStyle().getColor().getValue() != 0xFFAA00
+                    || lines.stream().noneMatch(c -> c.getString().contains("+30%"))
+                    || lines.stream().noneMatch(c -> c.getString().contains("+15%"))) {
+                throw new AssertionError("Masterwork client tooltip must show gold name, durability and mining bonuses: " + lines);
+            }
+            var armor = new ItemStack(net.minecraft.world.item.Items.IRON_CHESTPLATE);
+            armor.set(net.stirdrem.overgeared.components.ModComponents.FORGING_QUALITY.get(), net.stirdrem.overgeared.ForgingQuality.PERFECT);
+            var armorLines = armor.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.of(client.level), client.player,
+                    net.minecraft.world.item.TooltipFlag.NORMAL);
+            if (armorLines.stream().noneMatch(c -> c.getString().contains("+0.60"))) {
+                throw new AssertionError("Client is missing the server's armor bonus definition: " + armorLines);
+            }
+        });
+        System.out.println("Overgeared client test: passed quality names and real tooltip bonuses");
     }
 }
 

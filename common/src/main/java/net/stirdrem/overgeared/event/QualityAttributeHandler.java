@@ -157,8 +157,7 @@ public class QualityAttributeHandler {
             AttributeModifier originalModifier = entry.modifier();
 
             // Remove original
-            if (operation == AttributeModifier.Operation.ADD_VALUE)
-                event.removeModifier(entry.attribute(), originalModifier.id());
+            event.removeModifier(entry.attribute(), originalModifier.id());
 
             // Add modified version
             event.addModifier(
@@ -170,16 +169,10 @@ public class QualityAttributeHandler {
 
     private static AttributeModifier createModifiedAttribute(AttributeModifier original, double bonus,
                                                              AttributeModifier.Operation operation, ForgingQuality quality) {
-        Identifier id;
-        double amount;
-        if (operation == AttributeModifier.Operation.ADD_VALUE) {
-            id = original.id();
-            amount = original.amount() + bonus;
-        } else {
-            id = Identifier.parse(original.id() + "_overgeared_" + quality.getDisplayName() + "_"
-                    + operation.name().toLowerCase(java.util.Locale.ROOT) + (int) bonus * 10);
-            amount = bonus;
-        }
-        return new AttributeModifier(id, amount, operation);
+        // Scale this item's contribution, not the player's entire armor/damage.
+        // Four armor pieces must not multiply one another's protection bonuses.
+        double amount = operation == AttributeModifier.Operation.ADD_VALUE
+                ? original.amount() + bonus : original.amount() * (1.0 + bonus);
+        return new AttributeModifier(original.id(), amount, original.operation());
     }
 }

@@ -26,7 +26,8 @@ public class QualityAttributeReloadListener
     public static final QualityAttributeReloadListener INSTANCE =
             new QualityAttributeReloadListener();
 
-    private static final List<QualityAttributeDefinition> definitions = new ArrayList<>();
+    private static volatile List<QualityAttributeDefinition> definitions = List.of();
+    private static String synchronizedJson = "[]";
 
     public QualityAttributeReloadListener() {
         super(new Gson(), "quality_attributes");
@@ -40,14 +41,9 @@ public class QualityAttributeReloadListener
                          ResourceManager manager,
                          ProfilerFiller profiler) {
 
-        definitions.clear();
-        cachedItems.clear();
-        cacheReady = false;
-
-        for (JsonElement element : jsons.values()) {
-            QualityAttributeDefinition def = parse(element.getAsJsonObject());
-            definitions.add(def);
-        }
+        JsonArray array = new JsonArray();
+        jsons.values().forEach(array::add);
+        acceptSync(array.toString());
 
         // Item components and tags are bound after resource reload completes.
         // Resolve the affected-item cache on first gameplay use instead.
@@ -57,6 +53,22 @@ public class QualityAttributeReloadListener
 
     public static List<QualityAttributeDefinition> getAll() {
         return definitions;
+    }
+
+    public static String snapshotJson() {
+        return synchronizedJson;
+    }
+
+    /** Used after resource reload and when a multiplayer client joins/reloads. */
+    public static synchronized void acceptSync(String json) {
+        List<QualityAttributeDefinition> loaded = new ArrayList<>();
+        for (JsonElement element : JsonParser.parseString(json).getAsJsonArray()) {
+            loaded.add(parse(element.getAsJsonObject()));
+        }
+        definitions = List.copyOf(loaded);
+        synchronizedJson = json;
+        cachedItems.clear();
+        cacheReady = false;
     }
 
     private static QualityAttributeDefinition parse(JsonObject json) {

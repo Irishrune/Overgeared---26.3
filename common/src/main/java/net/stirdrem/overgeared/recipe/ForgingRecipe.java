@@ -135,9 +135,17 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
      * The anvil input also contains a blueprint slot at index 11.
      */
     private int findMatchOrigin(RecipeInput input) {
+        return findMatchOrigin(input, true);
+    }
+
+    public boolean matchesIngredients(RecipeInput input) {
+        return findMatchOrigin(input, false) >= 0;
+    }
+
+    private int findMatchOrigin(RecipeInput input, boolean includeBlueprint) {
         if (input.size() <= BLUEPRINT_SLOT || width < 1 || width > 3 || height < 1 || height > 3)
             return -1;
-        if (!checkBlueprint(input)) return -1;
+        if (includeBlueprint && !checkBlueprint(input)) return -1;
         for (int y = 0; y <= 3 - height; y++) {
             for (int x = 0; x <= 3 - width; x++) {
                 if (matchesPattern(input, x, y) && checkSurroundingBlanks(input, x, y)) {

@@ -141,6 +141,9 @@ def generate():
             method=factory.removeprefix('ore').lower(); args=[value(a) if a not in lists else lists[a] for a in raw]
             _,inputs,category,result,xp,time,group=args
             for ingredient in inputs:
+                # Ore processing keeps vanilla outputs. Reheat finished ingots instead.
+                if result.startswith('overgeared:heated_') and ('raw_' in ingredient or ingredient.endswith('_ore')):
+                    continue
                 data={'type':'minecraft:'+method,'ingredient':ingredient,'result':stack(result),'experience':xp,'cookingtime':time}
                 if group: data['group']=group
                 put('recipe','overgeared:'+result.split(':')[1]+'_from_'+method+'_'+ingredient.split(':')[1],data)
@@ -188,6 +191,10 @@ def generate():
                 if method not in mapping: raise ValueError(method)
                 data[mapping[method]]=a[0]
         id+=suffix
+        # Blacksmithing is an alternative: never replace a vanilla recipe.
+        # Keep the original item output, but give our recipe its own identifier.
+        if id.startswith('minecraft:'):
+            id = 'overgeared:' + id.split(':', 1)[1]
         put('recipe',id,data)
         if criteria:
             criteria['has_the_recipe']={'trigger':'minecraft:recipe_unlocked','conditions':{'recipes':[id]}}

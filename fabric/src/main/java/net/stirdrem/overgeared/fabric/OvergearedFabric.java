@@ -179,8 +179,16 @@ public final class OvergearedFabric implements ModInitializer {
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayer player = handler.getPlayer();
+            net.stirdrem.overgeared.networking.PacketDistributor.sendToPlayer(player,
+                    new net.stirdrem.overgeared.networking.packet.QualityDefinitionsS2CPacket(
+                            net.stirdrem.overgeared.datapack.QualityAttributeReloadListener.snapshotJson()));
             LAST_PLAYER_WORLDS.put(player.getUUID(), player.level());
             ModEvents.onPlayerJoinWorld(player);
+        });
+        ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resources, success) -> {
+            if (success) net.stirdrem.overgeared.networking.PacketDistributor.sendToAllPlayers(
+                    new net.stirdrem.overgeared.networking.packet.QualityDefinitionsS2CPacket(
+                            net.stirdrem.overgeared.datapack.QualityAttributeReloadListener.snapshotJson()));
         });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             ServerPlayer player = handler.getPlayer();
