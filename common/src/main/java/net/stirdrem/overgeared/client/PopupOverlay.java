@@ -3,8 +3,7 @@ package net.stirdrem.overgeared.client;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.LayeredDraw;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.resources.Identifier;
 import net.stirdrem.overgeared.OvergearedMod;
 import net.stirdrem.overgeared.config.ClientConfig;
@@ -12,13 +11,13 @@ import net.stirdrem.overgeared.event.AnvilMinigameEvents;
 
 import java.util.List;
 
-public class PopupOverlay implements LayeredDraw.Layer {
+public class PopupOverlay {
 
     public static final PopupOverlay INSTANCE = new PopupOverlay();
     public static final Identifier ID = OvergearedMod.loc("popup");
 
-    @Override
-    public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+    public void render(GuiGraphicsExtractor guiGraphics, DeltaTracker deltaTracker) {
+        if (Minecraft.getInstance().gui.hud.isHidden()) return;
         if (!ClientConfig.POP_UP_TOGGLE.get()) return;
 
         List<AnvilMinigameEvents.Popup> popups = AnvilMinigameEvents.getPopups();
@@ -44,11 +43,11 @@ public class PopupOverlay implements LayeredDraw.Layer {
             // Float upward over time; slight vertical offset per popup so they overlap naturally
             float popupY = baseY - progress * 12f - i * 6f;
 
-            guiGraphics.pose().pushPose();
-            guiGraphics.pose().translate(centerX, popupY, 0);
-            guiGraphics.pose().scale(scale, scale, 1f);
-            guiGraphics.drawString(font, popup.text, -font.width(popup.text) / 2, 0, color, false);
-            guiGraphics.pose().popPose();
+            guiGraphics.pose().pushMatrix();
+            guiGraphics.pose().translate(centerX, popupY);
+            guiGraphics.pose().scale(scale, scale);
+            guiGraphics.text(font, popup.text, -font.width(popup.text) / 2, 0, color, false);
+            guiGraphics.pose().popMatrix();
         }
     }
 }
