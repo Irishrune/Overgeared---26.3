@@ -3,7 +3,7 @@ package net.stirdrem.overgeared.client;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.renderer.item.ItemProperties;
+
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.alchemy.PotionContents;
@@ -31,38 +31,9 @@ public final class OvergearedClient {
         ModCompat.initClient();
     }
 
-    /** Must run on the main thread. */
     public static void registerItemProperties() {
-        // Register item properties for arrow potion type variants
-        // For LINGERING_ARROW, always show lingering variant when potion is present
-        ItemProperties.register(ModItems.LINGERING_ARROW.get(), OvergearedMod.loc("potion_type"),
-                (stack, level, entity, seed) -> {
-                    PotionContents potionContents = stack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
-                    if (potionContents.potion().isPresent() || potionContents.hasEffects()) {
-                        return 2.0f; // Lingering arrows always use lingering model
-                    }
-                    return 0.0f; // Base model
-                });
-
-        // For upgrade arrows, check LINGERING_STATUS to differentiate tipped vs lingering
-        registerArrowProperties(ModItems.IRON_UPGRADE_ARROW.get());
-        registerArrowProperties(ModItems.STEEL_UPGRADE_ARROW.get());
-        registerArrowProperties(ModItems.DIAMOND_UPGRADE_ARROW.get());
-    }
-
-    private static void registerArrowProperties(Item item) {
-        ItemProperties.register(item, OvergearedMod.loc("potion_type"),
-                (stack, level, entity, seed) -> {
-                    PotionContents potionContents = stack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
-                    boolean isLingering = stack.getOrDefault(ModComponents.LINGERING_STATUS.get(), false);
-
-                    if (isLingering && (potionContents.potion().isPresent() || potionContents.hasEffects())) {
-                        return 2.0f; // Lingering potion model
-                    } else if (potionContents.potion().isPresent() || potionContents.hasEffects()) {
-                        return 1.0f; // Tipped potion model
-                    }
-                    return 0.0f; // Base model
-                });
+        net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperties.ID_MAPPER.put(
+            OvergearedMod.loc("potion_type"), ArrowPotionType.CODEC);
     }
 
     /** Armor model drawn for the copper helmet. */

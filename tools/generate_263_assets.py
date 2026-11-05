@@ -92,6 +92,23 @@ def assets() -> dict[Path, dict]:
             # preserving the original per-arrow tint behavior without Java
             # client color hooks. White (-1) means no potion color applied.
             client_model['tints'] = [{'type': 'minecraft:potion', 'default': -1}]
+        if item in {'iron_arrow', 'steel_arrow', 'diamond_arrow'}:
+            variants = []
+            for threshold, variant in ((1, 'tipped'), (2, 'lingering')):
+                name = f'{variant}_{item}'
+                result[RES / f'models/item/{name}.json'] = {
+                    'parent': 'minecraft:item/generated',
+                    'textures': {'layer0': f'overgeared:item/{name}_base', 'layer1': f'overgeared:item/{name}_head'},
+                }
+                variants.append({'threshold': threshold, 'model': {
+                    'type': 'minecraft:model', 'model': f'overgeared:item/{name}',
+                    'tints': [{'type': 'minecraft:constant', 'value': -1}, {'type': 'minecraft:potion', 'default': -1}],
+                }})
+            client_model.pop('tints', None)
+            client_model = {'type': 'minecraft:range_dispatch', 'property': 'overgeared:potion_type',
+                            'fallback': client_model, 'entries': variants}
+        elif item == 'lingering_arrow':
+            client_model['tints'] = [{'type': 'minecraft:constant', 'value': -1}, {'type': 'minecraft:potion', 'default': -1}]
         result[RES / f'items/{item}.json'] = {'model': client_model}
 
     # BlockItem instances are registered in ModBlocks; these refer to block

@@ -1,0 +1,18 @@
+{
+  "type": "overgeared:fletching",
+  "result": {
+    "id": "minecraft:arrow",
+    "count": 4
+  },
+  "tip": "minecraft:flint",
+  "shaft": "minecraft:stick",
+  "feather": "minecraft:feather",
+  "result_tipped": {
+    "id": "minecraft:tipped_arrow",
+    "count": 4
+  },
+  "result_lingering": {
+    "id": "overgeared:lingering_arrow",
+    "count": 4
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "type": "overgeared:crafting_shapeless",
+  "category": "equipment",
+  "result": {
+    "id": "minecraft:golden_shovel",
+    "count": 1
+  },
+  "ingredients": [
+    "overgeared:golden_shovel_head",
+    "minecraft:stick"
+  ]
+}

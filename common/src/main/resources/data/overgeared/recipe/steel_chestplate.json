@@ -1,0 +1,24 @@
+{
+  "type": "overgeared:forging",
+  "category": "armors",
+  "result": {
+    "id": "overgeared:steel_chestplate",
+    "count": 1
+  },
+  "pattern": [
+    "# #",
+    "###",
+    "###"
+  ],
+  "key": {
+    "#": {
+      "ingredient": "overgeared:steel_plate",
+      "requires_heated": false,
+      "transfer_nbt": false
+    }
+  },
+  "hammering": 5,
+  "tier": "iron",
+  "need_quenching": false,
+  "has_polishing": false
+}

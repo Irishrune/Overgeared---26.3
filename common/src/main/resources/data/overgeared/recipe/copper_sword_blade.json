@@ -1,0 +1,25 @@
+{
+  "type": "overgeared:forging",
+  "category": "tool_heads",
+  "result": {
+    "id": "overgeared:copper_sword_blade",
+    "count": 1
+  },
+  "pattern": [
+    "#",
+    "#"
+  ],
+  "key": {
+    "#": {
+      "ingredient": "overgeared:heated_copper_ingot",
+      "requires_heated": false,
+      "transfer_nbt": false
+    }
+  },
+  "hammering": 3,
+  "tier": "stone",
+  "need_quenching": true,
+  "blueprint": [
+    "sword"
+  ]
+}

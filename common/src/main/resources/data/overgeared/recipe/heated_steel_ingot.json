@@ -1,0 +1,22 @@
+{
+  "type": "overgeared:forging",
+  "category": "misc",
+  "result": {
+    "id": "overgeared:heated_steel_ingot",
+    "count": 1
+  },
+  "pattern": [
+    "#"
+  ],
+  "key": {
+    "#": {
+      "ingredient": "overgeared:heated_crude_steel",
+      "requires_heated": false,
+      "transfer_nbt": false
+    }
+  },
+  "hammering": 3,
+  "tier": "iron",
+  "need_quenching": false,
+  "has_quality": false
+}

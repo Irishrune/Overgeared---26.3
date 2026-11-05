@@ -11,10 +11,10 @@ import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.stirdrem.overgeared.OvergearedMod;
 
-public class CopperLeggings<T extends Entity> extends EntityModel<T> {
+public class CopperLeggings<T extends EntityRenderState> extends EntityModel<T> {
   // This layer location should be baked with EntityRendererProvider.Context in the entity renderer and passed into this model's constructor
   public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(OvergearedMod.loc("copper_leggings"), "main");
   public final ModelPart Body;
@@ -22,6 +22,7 @@ public class CopperLeggings<T extends Entity> extends EntityModel<T> {
   public final ModelPart LeftLeg;
 
   public CopperLeggings(ModelPart root) {
+    super(root);
     this.Body = root.getChild("Body");
     this.RightLeg = root.getChild("RightLeg");
     this.LeftLeg = root.getChild("LeftLeg");
@@ -43,15 +44,4 @@ public class CopperLeggings<T extends Entity> extends EntityModel<T> {
     return LayerDefinition.create(meshdefinition, 64, 32);
   }
 
-  @Override
-  public void setupAnim(Entity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-
-  }
-
-  @Override
-  public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay, int color) {
-    Body.render(poseStack, buffer, packedLight, packedOverlay, color);
-    RightLeg.render(poseStack, buffer, packedLight, packedOverlay, color);
-    LeftLeg.render(poseStack, buffer, packedLight, packedOverlay, color);
-  }
 }

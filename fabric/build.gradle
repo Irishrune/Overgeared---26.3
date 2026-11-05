@@ -86,3 +86,13 @@ java {
 }
 
 jar { duplicatesStrategy = DuplicatesStrategy.EXCLUDE }
+
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = 'overgeared-test'
+        enableGameTests = true
+        enableClientGameTests = true
+        eula = true
+    }
+}

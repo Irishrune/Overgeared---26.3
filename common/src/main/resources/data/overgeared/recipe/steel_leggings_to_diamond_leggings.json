@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:smithing_transform",
+  "template": "overgeared:diamond_upgrade_smithing_template",
+  "base": "overgeared:steel_leggings",
+  "addition": "minecraft:diamond",
+  "result": {
+    "id": "minecraft:diamond_leggings",
+    "count": 1
+  }
+}

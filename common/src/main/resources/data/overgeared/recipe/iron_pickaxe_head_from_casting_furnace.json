@@ -1,0 +1,14 @@
+{
+  "type": "overgeared:casting",
+  "result": {
+    "id": "overgeared:iron_pickaxe_head",
+    "count": 1
+  },
+  "input": {
+    "iron": 27
+  },
+  "experience": 0.6,
+  "cookingtime": 180,
+  "need_polishing": true,
+  "tool_type": "pickaxe"
+}

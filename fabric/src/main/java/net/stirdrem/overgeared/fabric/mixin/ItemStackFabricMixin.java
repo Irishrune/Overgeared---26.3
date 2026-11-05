@@ -31,13 +31,13 @@ public abstract class ItemStackFabricMixin {
      * NeoForge: {@code ItemAttributeModifierEvent} (forging quality) and the broken-tool
      * {@code IItemStackExtension#getAttributeModifiers} override.
      */
-    @Inject(method = "forEachModifier(Lnet/minecraft/world/entity/EquipmentSlotGroup;Ljava/util/function/BiConsumer;)V",
+    @Inject(method = "forEachModifier(Lnet/minecraft/world/entity/EquipmentSlotGroup;Lorg/apache/commons/lang3/function/TriConsumer;)V",
             at = @At("HEAD"), cancellable = true)
-    private void overgeared$modifiersForGroup(EquipmentSlotGroup group, BiConsumer<Holder<Attribute>, AttributeModifier> action, CallbackInfo ci) {
+    private void overgeared$modifiersForGroup(EquipmentSlotGroup group, org.apache.commons.lang3.function.TriConsumer<Holder<Attribute>, AttributeModifier, ItemAttributeModifiers.Display> action, CallbackInfo ci) {
         ItemAttributeModifiers modified = overgeared$modifiedAttributes();
         if (modified != null) {
             modified.forEach(group, action);
-            EnchantmentHelper.forEachModifier((ItemStack) (Object) this, group, action);
+            EnchantmentHelper.forEachModifier((ItemStack) (Object) this, group, (a, m) -> action.accept(a, m, ItemAttributeModifiers.Display.attributeModifiers()));
             ci.cancel();
         }
     }

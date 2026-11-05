@@ -1,0 +1,12 @@
+{
+  "type": "overgeared:crafting_shapeless",
+  "category": "equipment",
+  "result": {
+    "id": "minecraft:iron_pickaxe",
+    "count": 1
+  },
+  "ingredients": [
+    "overgeared:iron_pickaxe_head",
+    "minecraft:stick"
+  ]
+}

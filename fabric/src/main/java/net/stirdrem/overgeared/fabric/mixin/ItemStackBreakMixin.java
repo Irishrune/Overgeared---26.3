@@ -19,7 +19,7 @@ import java.util.function.Consumer;
 public abstract class ItemStackBreakMixin {
     @Inject(method = "hurtAndBreak(ILnet/minecraft/server/level/ServerLevel;Lnet/minecraft/server/level/ServerPlayer;Ljava/util/function/Consumer;)V",
             at = @At("HEAD"), cancellable = true)
-    private void qualityBasedBreak(int amount, ServerLevel level, ServerPlayer player, Consumer<Item> itemConsumer, CallbackInfo ci) {
+    private void qualityBasedBreak(int amount, ServerLevel level, ServerPlayer player, Consumer<ItemStack> itemConsumer, CallbackInfo ci) {
         if (QualityBreak.preventBreak((ItemStack) (Object) this, amount, level, player)) {
             ci.cancel();
         }

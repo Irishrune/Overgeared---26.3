@@ -8,9 +8,7 @@
     "#"
   ],
   "key": {
-    "#": {
-      "tag": "c:ingots/steel"
-    }
+    "#": "#c:ingots/steel"
   },
   "result": {
     "count": 3,

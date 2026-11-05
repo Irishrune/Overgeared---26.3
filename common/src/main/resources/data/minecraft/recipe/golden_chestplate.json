@@ -1,0 +1,24 @@
+{
+  "type": "overgeared:forging",
+  "category": "armors",
+  "result": {
+    "id": "minecraft:golden_chestplate",
+    "count": 1
+  },
+  "pattern": [
+    "# #",
+    "###",
+    "###"
+  ],
+  "key": {
+    "#": {
+      "ingredient": "minecraft:gold_ingot",
+      "requires_heated": false,
+      "transfer_nbt": false
+    }
+  },
+  "hammering": 5,
+  "tier": "stone",
+  "need_quenching": false,
+  "has_polishing": false
+}

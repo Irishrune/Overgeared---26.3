@@ -1,0 +1,25 @@
+{
+  "type": "overgeared:forging",
+  "category": "tool_heads",
+  "result": {
+    "id": "overgeared:steel_axe_head",
+    "count": 1
+  },
+  "pattern": [
+    "##",
+    " #"
+  ],
+  "key": {
+    "#": {
+      "ingredient": "overgeared:heated_steel_ingot",
+      "requires_heated": false,
+      "transfer_nbt": false
+    }
+  },
+  "hammering": 4,
+  "tier": "iron",
+  "need_quenching": true,
+  "blueprint": [
+    "axe"
+  ]
+}

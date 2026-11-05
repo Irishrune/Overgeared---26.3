@@ -1,126 +1,51 @@
 package net.stirdrem.overgeared.client;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.components.WidgetSprites;
-import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
-import net.minecraft.core.NonNullList;
+import net.minecraft.client.gui.screens.recipebook.*;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.util.context.ContextMap;
+import net.minecraft.world.entity.player.StackedItemContents;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.display.RecipeDisplay;
 import net.stirdrem.overgeared.AnvilTier;
 import net.stirdrem.overgeared.OvergearedMod;
-import net.stirdrem.overgeared.recipe.ForgingRecipe;
+import net.stirdrem.overgeared.item.ModItems;
+import net.stirdrem.overgeared.recipe.*;
 import net.stirdrem.overgeared.screen.AbstractSmithingAnvilMenu;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Optional;
 
-public class ForgingRecipeBookComponent extends RecipeBookComponent {
-
-    protected static final WidgetSprites RECIPE_BOOK_BUTTONS =
-            new WidgetSprites(
-                    Identifier.fromNamespaceAndPath(OvergearedMod.MOD_ID, "recipe_book/anvil_enabled"),
-                    Identifier.fromNamespaceAndPath(OvergearedMod.MOD_ID, "recipe_book/anvil_disabled"),
-                    Identifier.fromNamespaceAndPath(OvergearedMod.MOD_ID, "recipe_book/anvil_enabled_highlighted"),
-                    Identifier.fromNamespaceAndPath(OvergearedMod.MOD_ID, "recipe_book/anvil_disabled_highlighted")
-            );
-
-    @Override
-    protected void initFilterButtonTextures() {
-        this.filterButton.initTextureValues(RECIPE_BOOK_BUTTONS);
+public class ForgingRecipeBookComponent extends RecipeBookComponent<AbstractSmithingAnvilMenu> {
+    private static final WidgetSprites FILTER = new WidgetSprites(
+        OvergearedMod.loc("recipe_book/anvil_enabled"), OvergearedMod.loc("recipe_book/anvil_disabled"),
+        OvergearedMod.loc("recipe_book/anvil_enabled_highlighted"), OvergearedMod.loc("recipe_book/anvil_disabled_highlighted"));
+    public ForgingRecipeBookComponent(AbstractSmithingAnvilMenu menu) {
+        super(menu, List.of(new TabInfo(SearchRecipeBookCategory.valueOf("OVERGEARED_FORGING")),
+            new TabInfo(ModItems.IRON_PICKAXE_HEAD.get(), ForgingRecipeCategories.TOOLS),
+            new TabInfo(Items.IRON_CHESTPLATE, ForgingRecipeCategories.ARMORS),
+            new TabInfo(Items.ANVIL, ForgingRecipeCategories.MISC)));
     }
-
-    public void hide() {
-        this.setVisible(false);
+    public void hide() { setVisible(false); }
+    @Override protected WidgetSprites getFilterButtonTextures() { return FILTER; }
+    @Override protected Component getRecipeFilterName() { return Component.translatable("overgeared.container.recipe_book.forgeable"); }
+    @Override protected boolean isCraftingSlot(Slot slot) {
+        return slot == menu.getResultSlot() || menu.getInputSlots().contains(slot.index);
     }
-
-    @Override
-    @Nonnull
-    protected Component getRecipeFilterName() {
-        return Component.translatable("overgeared.container.recipe_book.forgeable");
+    private boolean canDisplay(RecipeDisplay display) {
+        if (!(display instanceof ForgingRecipeDisplay forging)) return false;
+        AnvilTier tier = AnvilTier.fromDisplayName(forging.tier());
+        return tier != null && menu.getBlockEntity().getAnvilTier().isAtLeast(tier);
     }
-
-    @Override
-    public void slotClicked(@Nullable Slot slot) {
-        super.slotClicked(slot);
-        if (slot != null && slot.index < this.menu.getSize()) {
-            this.ghostRecipe.clear();
+    @Override protected void selectMatchingRecipes(RecipeCollection collection, StackedItemContents contents) {
+        collection.selectRecipes(contents, this::canDisplay);
+    }
+    @Override protected void fillGhostRecipe(GhostSlots ghosts, RecipeDisplay display, ContextMap context) {
+        if (!canDisplay(display)) return;
+        var grid = ((ForgingRecipeDisplay)display).grid();
+        ghosts.setResult(menu.getResultSlot(), context, grid.result());
+        // Server placement uses the top-left origin; ghosts must use the same coordinates.
+        for (int y = 0; y < grid.height(); y++) for (int x = 0; x < grid.width(); x++) {
+            ghosts.setInput(menu.slots.get(menu.getInputSlots().get(y * 3 + x)), context, grid.ingredients().get(y * grid.width() + x));
         }
     }
-
-    @Override
-    public void setupGhostRecipe(RecipeHolder<?> recipe, List<Slot> slots) {
-        if (!(recipe.value() instanceof ForgingRecipe forgingRecipe)) return;
-        if (!(this.menu instanceof AbstractSmithingAnvilMenu forgingMenu))
-            return;
-        ItemStack result = recipe.value().getResultItem(this.minecraft.level.registryAccess());
-        AnvilTier anvilTier = forgingMenu.getBlockEntity().getAnvilTier();
-        AnvilTier requiredTier = AnvilTier.valueOf(forgingRecipe.getAnvilTier().toUpperCase());
-
-        if (!anvilTier.isAtLeast(requiredTier)) {
-            // Show red message in action bar
-            this.minecraft.player.displayClientMessage(
-                    Component.literal("Anvil tier not high enough")
-                            .withStyle(ChatFormatting.RED),
-                    false // true = action bar, false = chat
-            );
-
-            return; // stop ghost placement
-        }
-        this.ghostRecipe.clear();
-        this.ghostRecipe.setRecipe(recipe);
-
-        int resultIndex = this.menu.getResultSlotIndex();
-        if (resultIndex >= 0 && resultIndex < slots.size()) {
-
-            Slot resultSlot = slots.get(resultIndex);
-
-            this.ghostRecipe.addIngredient(
-                    Ingredient.of(result),
-                    resultSlot.x,
-                    resultSlot.y);
-        }
-
-        List<Integer> inputSlots = forgingMenu.getInputSlots();
-
-        int recipeWidth = forgingRecipe.getWidth();
-        int recipeHeight = forgingRecipe.getHeight();
-
-        List<Optional<Ingredient>> ingredients = forgingRecipe.getIngredients();
-
-        for (int row = 0; row < recipeHeight; row++) {
-            for (int col = 0; col < recipeWidth; col++) {
-
-                int recipeIndex = col + row * recipeWidth;
-                if (recipeIndex >= ingredients.size())
-                    continue;
-
-                Optional<Ingredient> optionalIngredient = ingredients.get(recipeIndex);
-                if (optionalIngredient.isEmpty())
-                    continue;
-                Ingredient ingredient = optionalIngredient.get();
-
-                int gridIndex = col + row * 3; // 3x3 layout
-                if (gridIndex >= inputSlots.size())
-                    continue;
-
-                int slotIndex = inputSlots.get(gridIndex);
-                if (slotIndex >= slots.size())
-                    continue;
-
-                Slot slot = slots.get(slotIndex);
-
-                this.ghostRecipe.addIngredient(
-                        ingredient,
-                        slot.x,
-                        slot.y);
-            }
-        }
-    }
-
 }

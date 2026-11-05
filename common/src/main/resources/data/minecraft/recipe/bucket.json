@@ -1,0 +1,23 @@
+{
+  "type": "overgeared:forging",
+  "category": "misc",
+  "result": {
+    "id": "minecraft:bucket",
+    "count": 1
+  },
+  "pattern": [
+    "# #",
+    " # "
+  ],
+  "key": {
+    "#": {
+      "ingredient": "minecraft:iron_ingot",
+      "requires_heated": false,
+      "transfer_nbt": false
+    }
+  },
+  "hammering": 3,
+  "tier": "stone",
+  "need_quenching": false,
+  "has_quality": false
+}

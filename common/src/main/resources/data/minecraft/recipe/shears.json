@@ -1,0 +1,28 @@
+{
+  "type": "overgeared:forging",
+  "category": "misc",
+  "result": {
+    "id": "minecraft:shears",
+    "count": 1
+  },
+  "pattern": [
+    " #",
+    "# "
+  ],
+  "key": {
+    "#": {
+      "ingredient": "minecraft:iron_ingot",
+      "requires_heated": false,
+      "transfer_nbt": false
+    }
+  },
+  "hammering": 3,
+  "tier": "stone",
+  "need_quenching": false,
+  "needs_minigame": true,
+  "result_failed": {
+    "id": "minecraft:iron_ingot",
+    "count": 1
+  },
+  "has_quality": false
+}

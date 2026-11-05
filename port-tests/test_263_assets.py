@@ -16,7 +16,7 @@ from generate_263_assets import assets, registered_blocks, registered_items  # n
 class AssetTests(unittest.TestCase):
     def test_generated_definitions_match_source(self):
         definitions = assets()
-        self.assertEqual(len(definitions), 180)
+        self.assertEqual(len(definitions), 186)
         for file, obj in definitions.items():
             with self.subTest(file=file.name):
                 self.assertTrue(file.is_file(), file)
@@ -31,12 +31,17 @@ class AssetTests(unittest.TestCase):
         for item in registered_items():
             with self.subTest(item=item):
                 client = json.loads((ASSETS / f'items/{item}.json').read_text('utf-8'))
-                self.assertEqual(client['model']['model'], f'overgeared:item/{item}')
-                model = json.loads((ASSETS / f'models/item/{item}.json').read_text('utf-8'))
-                for name in model['textures'].values():
-                    namespace, path = name.split(':', 1)
-                    self.assertEqual(namespace, 'overgeared')
-                    self.assertTrue((ASSETS / f'textures/{path}.png').is_file(), name)
+                definition = client['model']
+                variants = [definition]
+                if definition['type'] == 'minecraft:range_dispatch':
+                    variants = [definition['fallback']] + [e['model'] for e in definition['entries']]
+                self.assertEqual(variants[0]['model'], f'overgeared:item/{item}')
+                for variant in variants:
+                    model = json.loads((ASSETS / ('models/' + variant['model'].split(':')[1] + '.json')).read_text('utf-8'))
+                    for name in model['textures'].values():
+                        namespace, path = name.split(':', 1)
+                        self.assertEqual(namespace, 'overgeared')
+                        self.assertTrue((ASSETS / f'textures/{path}.png').is_file(), name)
 
     def test_every_registered_block_has_blockstate_and_inventory_definition(self):
         for block in registered_blocks():

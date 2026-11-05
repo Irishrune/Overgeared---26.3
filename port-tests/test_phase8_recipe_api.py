@@ -71,7 +71,7 @@ class RecipePhase8Tests(unittest.TestCase):
 
     def test_upstream_recipe_json_is_not_corrupted(self):
         data=ROOT/'common/src/main/resources/data'
-        p=list(data.rglob('recipe/**/*.json')) + list(data.rglob('recipes/**/*.json'))
+        p=[f for f in data.rglob('*.json') if f.relative_to(data).parts[1] == 'recipe']
         self.assertGreater(len(p),30)
         for f in p:
             with self.subTest(recipe=f.name):

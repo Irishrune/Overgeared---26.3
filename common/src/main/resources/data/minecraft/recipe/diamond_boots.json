@@ -1,13 +1,9 @@
 {
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
-    {
-      "item": "minecraft:barrier"
-    }
+    "minecraft:barrier"
   ],
-  "result": {
-    "item": "minecraft:air"
-  },
+  "result": "minecraft:air",
   "neoforge:conditions": [
     {
       "type": "neoforge:false"

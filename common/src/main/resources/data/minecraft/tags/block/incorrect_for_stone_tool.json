@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "#overgeared:needs_copper_tool",
+    "#overgeared:needs_steel_tool"
+  ]
+}

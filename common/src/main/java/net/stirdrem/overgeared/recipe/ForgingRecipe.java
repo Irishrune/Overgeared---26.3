@@ -75,6 +75,24 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
         this.tab = tab;
     }
 
+    @Override public boolean isSpecial() { return false; }
+    @Override public PlacementInfo placementInfo() { return PlacementInfo.createFromOptionals(getIngredients()); }
+    @Override public RecipeBookCategory recipeBookCategory() {
+        return switch (tab) {
+            case TOOL_HEADS -> ForgingRecipeCategories.TOOLS;
+            case ARMORS -> ForgingRecipeCategories.ARMORS;
+            case MISC -> ForgingRecipeCategories.MISC;
+        };
+    }
+    @Override public java.util.List<net.minecraft.world.item.crafting.display.RecipeDisplay> display() {
+        var inputs = getIngredients().stream().map(i -> i.map(Ingredient::display)
+            .orElse(net.minecraft.world.item.crafting.display.SlotDisplay.Empty.INSTANCE)).toList();
+        var grid = new net.minecraft.world.item.crafting.display.ShapedCraftingRecipeDisplay(width, height, inputs,
+            new net.minecraft.world.item.crafting.display.SlotDisplay.ItemStackSlotDisplay(result),
+            new net.minecraft.world.item.crafting.display.SlotDisplay.ItemSlotDisplay(net.stirdrem.overgeared.block.ModBlocks.SMITHING_ANVIL.get().asItem()));
+        return List.of(new ForgingRecipeDisplay(grid, tier));
+    }
+
     public static Optional<ForgingRecipe> findBestMatch(Level world, RecipeInput RecipeInput) {
         return findBestMatchHolder(world, RecipeInput).map(RecipeHolder::value);
     }
@@ -608,7 +626,13 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
 
             @Override
             public <T> DataResult<Pair<ForgingIngredient, T>> decode(DynamicOps<T> ops, T input) {
-                return Ingredient.CODEC.parse(ops, input).map(ing -> Pair.of(
+                // Accept the new explicit ingredient field and old datapack item/tag objects.
+                T encoded = ops.get(input, "ingredient").result().orElse(input);
+                var item = ops.get(input, "item").flatMap(ops::getStringValue).result();
+                var tag = ops.get(input, "tag").flatMap(ops::getStringValue).result();
+                if (item.isPresent()) encoded = ops.createString(item.get());
+                else if (tag.isPresent()) encoded = ops.createString("#" + tag.get());
+                return Ingredient.CODEC.parse(ops, encoded).map(ing -> Pair.of(
                         new ForgingIngredient(Optional.of(ing), getBool(ops, input, "requires_heated"), getBool(ops, input, "transfer_nbt")),
                         input
                 ));
@@ -619,10 +643,8 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
                 if (input.ingredient().isEmpty()) {
                     return DataResult.error(() -> "Blank slots must be represented by spaces in the forging pattern");
                 }
-                return Ingredient.CODEC.encode(input.ingredient().get(), ops, prefix).flatMap(encoded -> {
-                    if (!input.requiresHeated && !input.transferNBT) return DataResult.success(encoded);
-
-                    DataResult<T> result = DataResult.success(encoded);
+                return Ingredient.CODEC.encodeStart(ops, input.ingredient().get()).flatMap(encoded -> {
+                    DataResult<T> result = ops.mergeToMap(prefix, ops.createString("ingredient"), encoded);
                     if (input.requiresHeated) {
                         result = result.flatMap(m -> ops.mergeToMap(m, ops.createString("requires_heated"), ops.createBoolean(true)));
                     }
@@ -659,7 +681,7 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
         DataComponentMap targetComponents = target.getComponents();
 
         for (DataComponentType<?> type : sourceComponents.keySet()) {
-            // If target already has component → overwrite
+            // If target already has component â†’ overwrite
             if (targetComponents.has(type)) {
                 target.remove(type);
             }

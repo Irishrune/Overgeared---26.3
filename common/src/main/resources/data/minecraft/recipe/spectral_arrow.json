@@ -1,0 +1,9 @@
+{
+  "type": "overgeared:fletching",
+  "result": {
+    "id": "minecraft:spectral_arrow",
+    "count": 1
+  },
+  "tip": "minecraft:glowstone_dust",
+  "shaft": "minecraft:arrow"
+}

@@ -26,9 +26,19 @@ class ArrowModel26_3Tests(unittest.TestCase):
         for name in ("iron_arrow","steel_arrow","diamond_arrow","lingering_arrow"):
             with self.subTest(name=name):
                 data=json.loads((ASSETS/(name+".json")).read_text(encoding="utf-8"))
-                self.assertEqual("minecraft:model",data["model"]["type"])
-                self.assertEqual("overgeared:item/"+name,data["model"]["model"])
-                self.assertEqual([{"type":"minecraft:potion","default":-1}],data["model"]["tints"])
+                model=data['model']
+                if name != 'lingering_arrow':
+                    self.assertEqual('minecraft:range_dispatch',model['type'])
+                    self.assertEqual('overgeared:potion_type',model['property'])
+                    self.assertEqual('overgeared:item/'+name,model['fallback']['model'])
+                    self.assertNotIn('tints',model['fallback'])
+                    self.assertEqual([1,2],[entry['threshold'] for entry in model['entries']])
+                    variants=[entry['model'] for entry in model['entries']]
+                else: variants=[model]
+                for variant in variants:
+                    self.assertEqual('minecraft:model',variant['type'])
+                    self.assertEqual([{'type':'minecraft:constant','value':-1},
+                                      {'type':'minecraft:potion','default':-1}],variant['tints'])
 
     def test_fabric_client_does_not_use_removed_color_api(self):
         self.assertNotIn("ColorProviderRegistry.ITEM.register(",CLIENT)

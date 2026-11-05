@@ -2,12 +2,8 @@
   "type": "minecraft:blasting",
   "experience": 0.0,
   "cookingtime": 100,
-  "ingredient": {
-    "item": "minecraft:air"
-  },
-  "result": {
-    "item": "minecraft:air"
-  },
+  "ingredient": "minecraft:air",
+  "result": "minecraft:air",
   "neoforge:conditions": [
     {
       "type": "neoforge:false"
