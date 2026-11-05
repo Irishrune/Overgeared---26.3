@@ -2,7 +2,7 @@
 
 This repository ports [Overgeared](https://github.com/phuccom000/Overgeared) to Minecraft **Fabric 26.3** with **Java 25**.
 
-**Status (November 5, 2026):** The Fabric build and dedicated-server game tests pass. Client startup and workstation-screen validation are still in progress. Development continues in [draft PR #1](https://github.com/Irishrune/Overgeared---26.3/pull/1). See [current verification and remaining work](PORTING-STATUS.md); older phase reports are historical.
+**Status (November 5, 2026):** The Fabric build, dedicated-server game tests, and client startup/workstation-screen tests pass. The development JAR and screenshots are available from the [verified Actions run](https://github.com/Irishrune/Overgeared---26.3/actions/runs/42033479804). Changes are in [draft PR #1](https://github.com/Irishrune/Overgeared---26.3/pull/1). See [verification and remaining manual checks](PORTING-STATUS.md); older phase reports are historical.
 
 ## Upstream and credits
 
