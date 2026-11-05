@@ -1,7 +1,9 @@
 package net.stirdrem.overgeared.client;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ObjectSelectionList;
@@ -49,7 +51,7 @@ public class BlacklistEditorScreen extends Screen {
                 40,
                 20
         );
-        this.addWidget(itemList);
+        this.addRenderableWidget(itemList);
 
         // Populate the list with current items
         refreshItemList();
@@ -81,7 +83,7 @@ public class BlacklistEditorScreen extends Screen {
           configScreen.setScrollPosition(savedScrollPosition);
           configScreen.restoreScrollPosition(); // Add this line
         }
-        this.minecraft.setScreen(parentScreen);
+        this.minecraft.setScreenAndShow(parentScreen);
       }).bounds(centerX - 105, this.height - 25, 100, 20).build();
         this.addRenderableWidget(doneButton);
 
@@ -91,42 +93,39 @@ public class BlacklistEditorScreen extends Screen {
               configScreen.setScrollPosition(savedScrollPosition);
                 configScreen.restoreScrollPosition(); // Add this line
             }
-            this.minecraft.setScreen(parentScreen);
+            this.minecraft.setScreenAndShow(parentScreen);
         }).bounds(centerX + 5, this.height - 25, 100, 20).build();
         this.addRenderableWidget(cancelButton);
     }
 
     private void refreshItemList() {
-        itemList.children().clear();
+        itemList.clearBlacklistEntries();
         for (String item : items) {
             itemList.addNewEntry(new BlacklistItemEntry(item));
         }
     }
 
     @Override
-    public void render(GuiGraphics gui, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(gui, mouseX, mouseY, partialTicks);
-        this.itemList.render(gui, mouseX, mouseY, partialTicks);
-        super.render(gui, mouseX, mouseY, partialTicks);
+    public void extractRenderState(GuiGraphicsExtractor gui, int mouseX, int mouseY, float partialTicks) {
+        // The list is registered as a renderable; do not extract it twice.
+        super.extractRenderState(gui, mouseX, mouseY, partialTicks);
 
         int centerX = this.width / 2;
-
-        // Draw title
-        gui.drawCenteredString(font, "Edit " + blacklistName, centerX, 15, 0xFFFFFF);
-        gui.drawCenteredString(font, "Add item IDs or tags (prefix with # for tags)", centerX, 25, 0xAAAAAA);
-        gui.drawCenteredString(font, "Current items: " + items.size(), centerX, this.height - 70, 0xAAAAAA);
+        gui.centeredText(font, "Edit " + blacklistName, centerX, 15, 0xFFFFFFFF);
+        gui.centeredText(font, "Add item IDs or tags (prefix with # for tags)", centerX, 25, 0xFFAAAAAA);
+        gui.centeredText(font, "Current items: " + items.size(), centerX, this.height - 70, 0xFFAAAAAA);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == 256) { // ESC key
+    public boolean keyPressed(KeyEvent event) {
+        if (event.key() == 256) { // ESC key
             if (parentScreen instanceof OvergearedConfigScreen configScreen) {
                 configScreen.setScrollPosition(savedScrollPosition);
                 configScreen.restoreScrollPosition(); // Add this line
             }
-            this.minecraft.setScreen(parentScreen);
+            this.minecraft.setScreenAndShow(parentScreen);
             return true;
-        } else if (keyCode == 257 && addItemField.isFocused()) { // Enter key in add field
+        } else if (event.key() == 257 && addItemField.isFocused()) { // Enter key in add field
             String newItem = addItemField.getValue().trim();
             if (!newItem.isEmpty() && !items.contains(newItem)) {
                 items.add(newItem);
@@ -135,7 +134,7 @@ public class BlacklistEditorScreen extends Screen {
             }
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     // Inner class for individual blacklist item entries
@@ -152,27 +151,30 @@ public class BlacklistEditorScreen extends Screen {
         }
 
         @Override
-        public void render(GuiGraphics gui, int idx, int y, int x, int listWidth, int entryHeight,
-                           int mouseX, int mouseY, boolean hovered, float pt) {
+        public void extractContent(GuiGraphicsExtractor gui, int mouseX, int mouseY,
+                                   boolean hovered, float pt) {
+            int x = this.getContentX();
+            int y = this.getContentY();
+            int listWidth = this.getContentWidth();
             int color = item.startsWith("#") ? 0x55FF55 : 0xFFFFFF; // Green for tags, white for items
-            gui.drawString(font, item, x + 5, y + 2, color);
+            gui.text(font, item, x + 5, y + 2, color | 0xFF000000);
 
             removeButton.setX(x + listWidth - 90);
             removeButton.setY(y);
-            removeButton.render(gui, mouseX, mouseY, pt);
+            removeButton.extractRenderState(gui, mouseX, mouseY, pt);
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (removeButton.isMouseOver(mouseX, mouseY)) {
-                return removeButton.mouseClicked(mouseX, mouseY, button);
+        public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            if (removeButton.isMouseOver(event.x(), event.y())) {
+                return removeButton.mouseClicked(event, doubleClick);
             }
             return false;
         }
 
         @Override
-        public boolean mouseReleased(double mouseX, double mouseY, int button) {
-            return removeButton.mouseReleased(mouseX, mouseY, button);
+        public boolean mouseReleased(MouseButtonEvent event) {
+            return removeButton.mouseReleased(event);
         }
 
         @Override
@@ -199,9 +201,13 @@ public class BlacklistEditorScreen extends Screen {
             super.addEntry(entry);
         }
 
+        public void clearBlacklistEntries() {
+            this.clearEntries();
+        }
+
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (super.mouseClicked(mouseX, mouseY, button)) {
+        public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            if (super.mouseClicked(event, doubleClick)) {
                 return true;
             }
             this.setSelected(null);
