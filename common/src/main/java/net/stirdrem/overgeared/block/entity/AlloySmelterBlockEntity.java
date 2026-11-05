@@ -400,6 +400,18 @@ public class AlloySmelterBlockEntity extends BaseContainerBlockEntity implements
         storedExperience = input.getFloatOr("storedXp", 0.0F);
     }
 
+    /**
+     * Vanilla's 26.3 BlockEntity removal path drops BaseContainerBlockEntity
+     * contents before the block entity is detached. Preserve Overgeared's
+     * additional stored-XP payout here, without dropping its items twice.
+     */
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        spawnExperience(storedExperience);
+        storedExperience = 0.0F;
+    }
+
     public void drops() {
         if (this.level == null) return;
         SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
