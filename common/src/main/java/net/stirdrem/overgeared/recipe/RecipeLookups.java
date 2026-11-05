@@ -28,9 +28,19 @@ public final class RecipeLookups {
         return manager;
     }
 
+    @SuppressWarnings("unchecked")
     public static <I extends RecipeInput, T extends Recipe<I>> Collection<RecipeHolder<T>> all(
             Level level, RecipeType<T> type) {
         RecipeManager manager = managerOrNull(level);
-        return manager == null ? List.of() : manager.recipeMap().byType(type);
+        // Minecraft 26.3 keeps RecipeMap private. Query the public holder
+        // collection and retain the recipe-type identity check that byType
+        // previously enforced. This is for server-side custom recipe scans.
+        if (manager == null) {
+            return List.of();
+        }
+        return manager.getRecipes().stream()
+                .filter(holder -> holder.value().getType() == type)
+                .map(holder -> (RecipeHolder<T>) holder)
+                .toList();
     }
 }
