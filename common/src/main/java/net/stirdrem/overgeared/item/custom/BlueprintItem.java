@@ -5,6 +5,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.stirdrem.overgeared.ForgingQuality;
 import net.stirdrem.overgeared.components.BlueprintData;
 import net.stirdrem.overgeared.components.ModComponents;
@@ -12,6 +13,7 @@ import net.stirdrem.overgeared.item.ToolType;
 import net.stirdrem.overgeared.item.ToolTypeRegistry;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class BlueprintItem extends Item {
 
@@ -19,38 +21,37 @@ public class BlueprintItem extends Item {
         super(properties);
     }
 
-    @Override
-    public void verifyComponentsAfterLoad(ItemStack stack) {
-        super.verifyComponentsAfterLoad(stack);
-
-        if (!stack.has(ModComponents.BLUEPRINT_DATA.get())) {
-            setDefaultData(stack);
-        }
+    /**
+     * New blueprint stacks receive this component through Item.Properties.
+     * Older stacks without the component still render using this fallback;
+     * the removed verifyComponentsAfterLoad callback is no longer available.
+     */
+    public static BlueprintData defaultData() {
+        return new BlueprintData(ForgingQuality.POOR.name(), "sword", 0);
     }
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context,
-                                List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, context, tooltip, flag);
+                                TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, context, display, tooltip, flag);
 
-        BlueprintData data = stack.get(ModComponents.BLUEPRINT_DATA.get());
-        if (data == null) return;
+        BlueprintData data = stack.getOrDefault(ModComponents.BLUEPRINT_DATA.get(), defaultData());
 
         ForgingQuality quality = data.getQualityEnum();
 
         // Only show quality & progress if not NONE
         if (quality != ForgingQuality.NONE) {
             // Show quality
-            tooltip.add(Component.translatable("tooltip.overgeared.blueprint.quality")
+            tooltip.accept(Component.translatable("tooltip.overgeared.blueprint.quality")
                     .withStyle(ChatFormatting.GRAY)
                     .append(Component.translatable(quality.getBlueprintTranslationKey()).withStyle(quality.getColor())));
 
             if (quality.isMaxBlueprintLevel()) {
-                tooltip.add(Component.translatable("tooltip.overgeared.blueprint.maxlevel")
+                tooltip.accept(Component.translatable("tooltip.overgeared.blueprint.maxlevel")
                         .withStyle(ChatFormatting.LIGHT_PURPLE));
             } else {
                 // Show progress
-                tooltip.add(Component.translatable(
+                tooltip.accept(Component.translatable(
                         "tooltip.overgeared.blueprint.progress",
                         data.uses(),
                         getUsesToNextLevel(quality)
@@ -60,16 +61,16 @@ public class BlueprintItem extends Item {
 
         // Show tool type (always shown)
         ToolType toolType = getToolType(stack);
-        tooltip.add(Component.translatable("tooltip.overgeared.blueprint.tool_type")
+        tooltip.accept(Component.translatable("tooltip.overgeared.blueprint.tool_type")
                 .withStyle(ChatFormatting.GRAY)
                 .append(toolType.getDisplayName().withStyle(ChatFormatting.BLUE)));
 
         // Show required status
         if (stack.has(ModComponents.BLUEPRINT_REQUIRED.get())) {
             if (Boolean.TRUE.equals(stack.get(ModComponents.BLUEPRINT_REQUIRED.get())))
-                tooltip.add(Component.translatable("tooltip.overgeared.blueprint.required")
+                tooltip.accept(Component.translatable("tooltip.overgeared.blueprint.required")
                         .withStyle(ChatFormatting.RED));
-            else tooltip.add(Component.translatable("tooltip.overgeared.blueprint.optional")
+            else tooltip.accept(Component.translatable("tooltip.overgeared.blueprint.optional")
                     .withStyle(ChatFormatting.BLUE));
         }
     }
