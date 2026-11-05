@@ -8,6 +8,8 @@ import unittest
 ROOT=Path(__file__).resolve().parents[1]/"common/src/main/java/net/stirdrem/overgeared"
 SMELTING=(ROOT/"recipe/CastSmeltingRecipe.java").read_text(encoding="utf-8")
 BLASTING=(ROOT/"recipe/CastBlastingRecipe.java").read_text(encoding="utf-8")
+NBT_SMELTING=(ROOT/"recipe/NBTKeepingSmeltingRecipe.java").read_text(encoding="utf-8")
+NBT_BLASTING=(ROOT/"recipe/NBTKeepingBlastingRecipe.java").read_text(encoding="utf-8")
 
 class CastCookingRecipes26_3Tests(unittest.TestCase):
     def test_custom_serializers_use_abstract_cooking_recipe(self):
@@ -41,6 +43,20 @@ class CastCookingRecipes26_3Tests(unittest.TestCase):
             self.assertIn("buffer.writeFloat(recipe.experience())",source)
             self.assertIn("buffer.writeVarInt(recipe.cookingTime())",source)
             self.assertIn("CodecUtils.MATERIAL_INT_MAP_STREAM.encode",source)
+
+    def test_component_preserving_cooking_recipes_keep_serializers(self):
+        for name, src, typ, icon in [
+            ("NBTKeepingSmeltingRecipe", NBT_SMELTING, "SMELTING", "FURNACE"),
+            ("NBTKeepingBlastingRecipe", NBT_BLASTING, "BLASTING", "BLAST_FURNACE"),
+        ]:
+            with self.subTest(name=name):
+                self.assertIn(f"class {name} extends AbstractCookingRecipe", src)
+                self.assertIn(f"public RecipeSerializer<{name}> getSerializer()", src)
+                self.assertIn(f"return RecipeType.{typ};", src)
+                self.assertIn(f"return Items.{icon};", src)
+                self.assertIn("output.applyComponents(input.getItem(0).getComponentsPatch())", src)
+                self.assertIn("AbstractCookingRecipe.cookingMapCodec", src)
+                self.assertIn("AbstractCookingRecipe.cookingStreamCodec", src)
 
 if __name__=="__main__":
     unittest.main()
