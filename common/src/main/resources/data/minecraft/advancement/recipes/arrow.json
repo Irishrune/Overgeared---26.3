@@ -14,7 +14,9 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "minecraft:arrow"
+        "recipes": [
+          "minecraft:arrow"
+        ]
       }
     }
   },

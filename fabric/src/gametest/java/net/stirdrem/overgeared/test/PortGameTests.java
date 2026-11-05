@@ -13,10 +13,32 @@ import net.stirdrem.overgeared.OvergearedMod;
 import net.stirdrem.overgeared.item.ModItems;
 import net.stirdrem.overgeared.recipe.*;
 import net.stirdrem.overgeared.util.ModTags;
+import net.stirdrem.overgeared.ForgingQuality;
+import net.stirdrem.overgeared.components.CastData;
+import net.stirdrem.overgeared.components.ModComponents;
+import net.stirdrem.overgeared.block.ModBlocks;
+import net.stirdrem.overgeared.block.entity.BaseSmithingAnvilBlockEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import java.util.*;
 
 public class PortGameTests {
     private static void check(boolean condition, String message) {
         if (!condition) throw new AssertionError(message);
+    }
+
+    private static Recipe<?> recipe(GameTestHelper test, String id) {
+        return test.getLevel().recipeAccess().getRecipes().stream()
+                .filter(holder -> holder.id().identifier().toString().equals(id))
+                .findFirst().orElseThrow(() -> new AssertionError("Recipe missing: " + id)).value();
+    }
+
+    private static RecipeInput input(ItemStack... stacks) {
+        return new RecipeInput() {
+            public ItemStack getItem(int slot) { return stacks[slot]; }
+            public int size() { return stacks.length; }
+        };
     }
 
     @GameTest public void gameplayDataLoads(GameTestHelper test) {
@@ -25,6 +47,78 @@ public class PortGameTests {
         check(RecipeLookups.all(test.getLevel(), ModRecipeTypes.FORGING.get()).size() >= 40, "Missing generated forging recipes");
         check(RecipeLookups.all(test.getLevel(), ModRecipeTypes.CASTING.get()).size() >= 20, "Missing generated casting recipes");
         check(RecipeLookups.all(test.getLevel(), ModRecipeTypes.FLETCHING.get()).size() >= 5, "Missing generated fletching recipes");
+        test.succeed();
+    }
+
+    @GameTest public void forgingAndAssemblyPreserveQuality(GameTestHelper test) {
+        ForgingRecipe forge = (ForgingRecipe)recipe(test, "overgeared:iron_pickaxe_head");
+        ItemStack[] grid = new ItemStack[12];
+        Arrays.fill(grid, ItemStack.EMPTY);
+        // Shift the three-wide recipe to the bottom row, preserving the real anvil layout.
+        for (int i = 6; i < 9; i++) grid[i] = new ItemStack(ModItems.HEATED_IRON_INGOT.get());
+        check(forge.matches(input(grid), test.getLevel()), "Shifted forging recipe does not match");
+        grid[0] = new ItemStack(Items.STICK);
+        check(!forge.matches(input(grid), test.getLevel()), "Forging accepted an unrelated extra item");
+        grid[0] = ItemStack.EMPTY;
+        ItemStack head = forge.assemble(input(grid));
+        check(head.is(ModItems.IRON_PICKAXE_HEAD.get()), "Wrong forged head");
+        head.set(ModComponents.FORGING_QUALITY.get(), ForgingQuality.EXPERT);
+        head.set(ModComponents.CREATOR.get(), "Port test smith");
+        head.set(ModComponents.POLISHED.get(), true);
+        CraftingInput assembly = CraftingInput.of(2, 1, List.of(new ItemStack(Items.STICK), head));
+        var assemble = (OvergearedShapelessRecipe)recipe(test, "minecraft:iron_pickaxe");
+        check(assemble.matches(assembly, test.getLevel()), "Head and handle cannot be assembled");
+        ItemStack tool = assemble.assemble(assembly);
+        check(tool.is(Items.IRON_PICKAXE), "Wrong assembled tool");
+        check(tool.get(ModComponents.FORGING_QUALITY.get()) == ForgingQuality.EXPERT, "Assembly lost quality");
+        check("Port test smith".equals(tool.get(ModComponents.CREATOR.get())), "Assembly lost creator");
+        test.succeed();
+    }
+
+    @GameTest public void castingRetainsMoldAndFinishingState(GameTestHelper test) {
+        var recipe = (CastSmeltingRecipe)recipe(test, "overgeared:iron_pickaxe_head_from_cast_smelting");
+        ItemStack mold = new ItemStack(ModItems.CLAY_TOOL_CAST.get());
+        mold.set(ModComponents.CAST_DATA.get(), new CastData("expert", "pickaxe", Map.of("iron", 27),
+                27, 27, List.of(new ItemStack(Items.IRON_INGOT, 3)), ItemStack.EMPTY, false));
+        var input = new SingleRecipeInput(mold);
+        check(recipe.matches(input, test.getLevel()), "Filled mold does not match smelting recipe");
+        ItemStack result = recipe.assemble(input);
+        check(result.is(ModItems.CLAY_TOOL_CAST.get()), "Smelting discarded the mold");
+        CastData cast = result.get(ModComponents.CAST_DATA.get());
+        check(cast != null && cast.output().is(ModItems.IRON_PICKAXE_HEAD.get()), "Missing cast head");
+        check(cast.materials().isEmpty() && cast.heated(), "Cast material/heat transition failed");
+        check(cast.output().get(ModComponents.FORGING_QUALITY.get()) == ForgingQuality.EXPERT, "Cast quality lost");
+        check(Boolean.FALSE.equals(cast.output().get(ModComponents.POLISHED.get())), "Cast bypassed polishing");
+        check(!recipe.matches(new SingleRecipeInput(result), test.getLevel()), "Finished mold can be recast");
+        test.succeed();
+    }
+
+    @GameTest public void anvilInventoryAndOwnershipSurviveSave(GameTestHelper test) {
+        BlockPos pos = new BlockPos(1, 2, 1);
+        test.setBlock(pos.below(), Blocks.STONE);
+        test.setBlock(pos, ModBlocks.STONE_SMITHING_ANVIL.get());
+        var anvil = test.getBlockEntity(pos, BaseSmithingAnvilBlockEntity.class);
+        UUID owner = UUID.fromString("de54e4e4-9813-4c60-b659-e3542b940cb8");
+        anvil.setOwner(owner);
+        ItemStack head = new ItemStack(ModItems.IRON_PICKAXE_HEAD.get());
+        head.set(ModComponents.FORGING_QUALITY.get(), ForgingQuality.PERFECT);
+        anvil.getItemHandler().setStackInSlot(7, head);
+        var saved = anvil.saveWithFullMetadata(test.getLevel().registryAccess());
+        var restored = (BaseSmithingAnvilBlockEntity)BlockEntity.loadStatic(anvil.getBlockPos(), anvil.getBlockState(),
+                saved, test.getLevel().registryAccess());
+        check(restored != null && owner.equals(restored.getOwnerUUID()), "Anvil owner lost on save");
+        check(restored.getItemHandler().getStackInSlot(7).get(ModComponents.FORGING_QUALITY.get()) == ForgingQuality.PERFECT,
+                "Anvil saved slot or quality changed");
+        test.succeed();
+    }
+
+    @GameTest public void customMiningTiersKeepTheirProgression(GameTestHelper test) {
+        var copper = new ItemStack(ModItems.COPPER_PICKAXE.get());
+        var steel = new ItemStack(ModItems.STEEL_PICKAXE.get());
+        check(copper.isCorrectToolForDrops(Blocks.IRON_ORE.defaultBlockState()), "Copper cannot harvest iron");
+        check(!copper.isCorrectToolForDrops(Blocks.DIAMOND_ORE.defaultBlockState()), "Copper bypasses iron tier");
+        check(steel.isCorrectToolForDrops(Blocks.OBSIDIAN.defaultBlockState()), "Steel cannot harvest obsidian");
+        check(!steel.isCorrectToolForDrops(Blocks.ANCIENT_DEBRIS.defaultBlockState()), "Steel bypasses diamond tier");
         test.succeed();
     }
 

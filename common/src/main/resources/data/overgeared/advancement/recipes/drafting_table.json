@@ -24,7 +24,9 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "overgeared:drafting_table"
+        "recipes": [
+          "overgeared:drafting_table"
+        ]
       }
     }
   },

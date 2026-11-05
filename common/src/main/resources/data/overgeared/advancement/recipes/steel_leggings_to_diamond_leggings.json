@@ -14,7 +14,9 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "overgeared:steel_leggings_to_diamond_leggings"
+        "recipes": [
+          "overgeared:steel_leggings_to_diamond_leggings"
+        ]
       }
     }
   },

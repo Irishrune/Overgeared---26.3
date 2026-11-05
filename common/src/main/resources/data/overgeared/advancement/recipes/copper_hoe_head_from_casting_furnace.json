@@ -14,7 +14,9 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "overgeared:copper_hoe_head_from_casting_furnace"
+        "recipes": [
+          "overgeared:copper_hoe_head_from_casting_furnace"
+        ]
       }
     }
   },

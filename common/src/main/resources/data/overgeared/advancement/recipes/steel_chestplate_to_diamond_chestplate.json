@@ -14,7 +14,9 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "overgeared:steel_chestplate_to_diamond_chestplate"
+        "recipes": [
+          "overgeared:steel_chestplate_to_diamond_chestplate"
+        ]
       }
     }
   },

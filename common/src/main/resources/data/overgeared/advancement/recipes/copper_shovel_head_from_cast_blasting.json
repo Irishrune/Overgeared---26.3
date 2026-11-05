@@ -14,7 +14,9 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "overgeared:copper_shovel_head_from_cast_blasting"
+        "recipes": [
+          "overgeared:copper_shovel_head_from_cast_blasting"
+        ]
       }
     }
   },

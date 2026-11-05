@@ -14,7 +14,9 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "overgeared:copper_sword_blade"
+        "recipes": [
+          "overgeared:copper_sword_blade"
+        ]
       }
     }
   },

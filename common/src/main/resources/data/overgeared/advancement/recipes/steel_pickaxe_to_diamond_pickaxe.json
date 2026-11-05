@@ -14,7 +14,9 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "overgeared:steel_pickaxe_to_diamond_pickaxe"
+        "recipes": [
+          "overgeared:steel_pickaxe_to_diamond_pickaxe"
+        ]
       }
     }
   },

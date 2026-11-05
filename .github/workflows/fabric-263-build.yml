@@ -55,7 +55,26 @@ jobs:
             fabric/build/reports/
             fabric/build/gametest/
             fabric/run*/logs/
+            fabric/build/run*/
           if-no-files-found: warn
+
+      - name: Test client startup and workstation screens
+        shell: bash
+        run: |
+          set -o pipefail
+          xvfb-run -a ./gradlew :fabric:runClientGameTest --console=plain --stacktrace 2>&1 | tee client-26.3.log
+
+      - name: Upload client test screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fabric-263-client-diagnostics
+          path: |
+            client-26.3.log
+            fabric/build/run*/
+            fabric/build/gametest/
+            fabric/run*/logs/
+            fabric/run*/screenshots/
 
       - name: Upload tested Fabric jar
         uses: actions/upload-artifact@v4

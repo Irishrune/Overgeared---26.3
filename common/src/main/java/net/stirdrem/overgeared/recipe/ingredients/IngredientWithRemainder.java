@@ -20,11 +20,13 @@ public class IngredientWithRemainder {
         this.durabilityDecrease = durabilityDecrease;
     }
 
-    public static final Codec<IngredientWithRemainder> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    public static final Codec<IngredientWithRemainder> CODEC = Codec.withAlternative(RecordCodecBuilder.create(instance -> instance.group(
             Services.PLATFORM.ingredientMapCodec().forGetter(o -> o.ingredient),
             Codec.BOOL.optionalFieldOf("remainder", false).forGetter(o -> o.remainder),
             Codec.INT.optionalFieldOf("durability_decrease", 0).forGetter(o -> o.durabilityDecrease)
-    ).apply(instance, IngredientWithRemainder::new));
+    ).apply(instance, IngredientWithRemainder::new)),
+            Ingredient.CODEC.xmap(ingredient -> new IngredientWithRemainder(ingredient, false, 0),
+                    IngredientWithRemainder::getIngredient));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, IngredientWithRemainder> STREAM_CODEC = StreamCodec.composite(
             Ingredient.CONTENTS_STREAM_CODEC, o -> o.ingredient,

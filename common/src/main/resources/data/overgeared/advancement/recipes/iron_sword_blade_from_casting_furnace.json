@@ -14,7 +14,9 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "overgeared:iron_sword_blade_from_casting_furnace"
+        "recipes": [
+          "overgeared:iron_sword_blade_from_casting_furnace"
+        ]
       }
     }
   },

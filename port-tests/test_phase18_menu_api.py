@@ -44,7 +44,7 @@ class ExtendedMenuBridgeTests(unittest.TestCase):
         self.assertNotIn("register.getRegistryKey().location()", SOURCE)
         self.assertIn("CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)", SOURCE)
         self.assertNotIn("CreativeModeTab.builder()", SOURCE)
-        self.assertIn("MapCodec.assumeMapUnsafe(Ingredient.CODEC)", SOURCE)
+        self.assertIn('Ingredient.CODEC.fieldOf("ingredient")', SOURCE)
         self.assertNotIn("Ingredient.CODEC_NONEMPTY", SOURCE)
 
 if __name__ == "__main__":

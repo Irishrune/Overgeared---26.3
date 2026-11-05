@@ -14,7 +14,9 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "minecraft:iron_chestplate"
+        "recipes": [
+          "minecraft:iron_chestplate"
+        ]
       }
     }
   },

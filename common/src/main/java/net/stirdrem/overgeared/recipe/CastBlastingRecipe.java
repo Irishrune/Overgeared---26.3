@@ -5,7 +5,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.stirdrem.overgeared.item.ModItems;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -35,7 +35,7 @@ public class CastBlastingRecipe extends AbstractCookingRecipe {
     public CastBlastingRecipe(Recipe.CommonInfo commonInfo, AbstractCookingRecipe.CookingBookInfo bookInfo,
                               Map<String, Integer> requiredMaterials, String toolType, ItemStackTemplate result,
                               boolean needPolishing, float experience, int cookingTime) {
-        super(commonInfo, bookInfo, Ingredient.of(BuiltInRegistries.ITEM.get(ModTags.Items.USABLE_TOOL_CAST).orElseThrow()), result, experience, cookingTime);
+        super(commonInfo, bookInfo, Ingredient.of(ModItems.CLAY_TOOL_CAST.get(), ModItems.NETHER_TOOL_CAST.get()), result, experience, cookingTime);
 
         this.requiredMaterials = requiredMaterials;
         this.toolType = toolType;
@@ -44,7 +44,7 @@ public class CastBlastingRecipe extends AbstractCookingRecipe {
 
     // Display-only placeholder. Exact cast contents are checked in matches(), not in Ingredient.
     public NonNullList<Ingredient> getIngredients() {
-        return NonNullList.withSize(1, Ingredient.of(BuiltInRegistries.ITEM.get(ModTags.Items.USABLE_TOOL_CAST).orElseThrow()));
+        return NonNullList.withSize(1, Ingredient.of(ModItems.CLAY_TOOL_CAST.get(), ModItems.NETHER_TOOL_CAST.get()));
     }
 
     public float getExperience() { return experience(); }

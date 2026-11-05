@@ -14,7 +14,9 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "overgeared:steel_sword_blade_from_cast_smelting"
+        "recipes": [
+          "overgeared:steel_sword_blade_from_cast_smelting"
+        ]
       }
     }
   },

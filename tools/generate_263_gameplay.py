@@ -187,7 +187,7 @@ def generate():
         id+=suffix
         put('recipe',id,data)
         if criteria:
-            criteria['has_the_recipe']={'trigger':'minecraft:recipe_unlocked','conditions':{'recipe':id}}
+            criteria['has_the_recipe']={'trigger':'minecraft:recipe_unlocked','conditions':{'recipes':[id]}}
             put('advancement',id.replace(':',':recipes/'),{'parent':'minecraft:recipes/root','criteria':criteria,'requirements':[list(criteria)],'rewards':{'recipes':[id]}})
     if count<150: raise ValueError('Provider unexpectedly incomplete: '+str(count))
     return out

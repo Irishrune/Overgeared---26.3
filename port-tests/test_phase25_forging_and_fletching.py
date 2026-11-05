@@ -11,7 +11,8 @@ class ForgeQuenchingAndFletchingTests(unittest.TestCase):
     def test_armor_quenching_is_component_based(self):
         self.assertIn("result.create().get(DataComponents.EQUIPPABLE)", FORGING)
         self.assertIn("equippable != null && equippable.slot().isArmor()", FORGING)
-        self.assertIn("actualNeedQuenching = false", FORGING)
+        self.assertIn("return needQuenching && !(equippable != null && equippable.slot().isArmor());", FORGING)
+        self.assertNotIn("result.create()", FORGING.split("public static final class Serializer")[1])
         self.assertNotIn("instanceof ArmorItem", FORGING)
         self.assertNotIn("import net.minecraft.world.item.ArmorItem;", FORGING)
 

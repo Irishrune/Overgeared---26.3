@@ -166,8 +166,8 @@ public class FabricPlatformHelper implements IPlatformHelper {
 
     @Override
     public MapCodec<Ingredient> ingredientMapCodec() {
-        // Vanilla only has a list-or-object codec; the object form can be read as a map.
-        return MapCodec.assumeMapUnsafe(Ingredient.CODEC);
+        // 26.3 ingredients are strings or lists, so remainder metadata needs an explicit field.
+        return Ingredient.CODEC.fieldOf("ingredient");
     }
 
     @Override

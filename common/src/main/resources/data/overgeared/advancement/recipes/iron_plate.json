@@ -14,7 +14,9 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "overgeared:iron_plate"
+        "recipes": [
+          "overgeared:iron_plate"
+        ]
       }
     }
   },

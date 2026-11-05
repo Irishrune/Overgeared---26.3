@@ -14,7 +14,9 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "overgeared:steel_hammer_head"
+        "recipes": [
+          "overgeared:steel_hammer_head"
+        ]
       }
     }
   },

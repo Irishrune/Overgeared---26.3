@@ -14,7 +14,9 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "overgeared:steel_axe_head_from_casting_furnace"
+        "recipes": [
+          "overgeared:steel_axe_head_from_casting_furnace"
+        ]
       }
     }
   },

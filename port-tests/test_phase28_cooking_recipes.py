@@ -25,7 +25,7 @@ class CastCookingRecipes26_3Tests(unittest.TestCase):
     def test_tag_ingredient_and_component_contents_survive(self):
         for name, source in [("smelting",SMELTING),("blasting",BLASTING)]:
             with self.subTest(name=name):
-                self.assertEqual(2,source.count("Ingredient.of(BuiltInRegistries.ITEM.get(ModTags.Items.USABLE_TOOL_CAST).orElseThrow())"))
+                self.assertEqual(2,source.count("Ingredient.of(ModItems.CLAY_TOOL_CAST.get(), ModItems.NETHER_TOOL_CAST.get())"))
                 self.assertIn("stack.is(ModTags.Items.USABLE_TOOL_CAST)",source)
                 self.assertIn("castData.materials()",source)
                 self.assertIn("for (var entry : requiredMaterials.entrySet())",source)

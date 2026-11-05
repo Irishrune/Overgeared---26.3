@@ -24,7 +24,9 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "overgeared:steel_ingot_from_nuggets"
+        "recipes": [
+          "overgeared:steel_ingot_from_nuggets"
+        ]
       }
     }
   },

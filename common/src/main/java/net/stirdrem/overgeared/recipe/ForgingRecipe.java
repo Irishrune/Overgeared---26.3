@@ -320,7 +320,9 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
     }
 
     public boolean needQuenching() {
-        return needQuenching;
+        // Item components are bound only after the recipe registry has loaded.
+        var equippable = result.create().get(DataComponents.EQUIPPABLE);
+        return needQuenching && !(equippable != null && equippable.slot().isArmor());
     }
 
     public List<String> getPattern() {
@@ -523,18 +525,9 @@ public class ForgingRecipe implements OvergearedStationRecipe<RecipeInput> {
                     }
                 }
 
-                // Since 26.3, armor is identified by an equippable component,
-                // not the removed ArmorItem class. Keep the original exemption
-                // from quenching for armor, but not for non-armor equipment.
-                boolean actualNeedQuenching = needQuenching;
-                var equippable = result.create().get(DataComponents.EQUIPPABLE);
-                if (equippable != null && equippable.slot().isArmor()) {
-                    actualNeedQuenching = false;
-                }
-
                 return new ForgingRecipe("", requiresBlueprint, new LinkedHashSet<>(blueprintTypes), tier,
                         new ArrayList<>(pattern), new LinkedHashMap<>(key), ingredients,
-                        result, failedResult, hammering, hasQuality, needsMinigame, hasPolishing, actualNeedQuenching,
+                        result, failedResult, hammering, hasQuality, needsMinigame, hasPolishing, needQuenching,
                         showNotification, minimumQuality, qualityDifficulty, width, height, tab);
             }));
 
