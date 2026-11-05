@@ -41,7 +41,7 @@ class ForgeQuenchingAndFletchingTests(unittest.TestCase):
         self.assertIn('syncData.store("anvilOwner", UUIDUtil.CODEC, new UUID(0, 0))', INTERACTIONS)
         self.assertIn('syncData.read("anvilOwner", UUIDUtil.CODEC).orElse(null)', INTERACTIONS)
         self.assertIn("owner != null && owner.getMostSignificantBits() == 0", INTERACTIONS)
-        self.assertIn("level.getGameRules().get(GameRules.LIMITED_CRAFTING)", INTERACTIONS)
+        self.assertIn("level instanceof ServerLevel serverLevel && serverLevel.getGameRules().get(GameRules.LIMITED_CRAFTING)", INTERACTIONS)
         self.assertIn("recipeOpt.isEmpty() || !serverPlayer.getRecipeBook().contains(recipeOpt.get().id())", INTERACTIONS)
         self.assertIn("SoundEvents.STONE_HIT, SoundSource.BLOCKS", INTERACTIONS)
         self.assertNotIn("sync.putUUID(", INTERACTIONS)
