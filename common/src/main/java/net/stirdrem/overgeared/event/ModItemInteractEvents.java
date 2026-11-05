@@ -5,6 +5,7 @@ import net.stirdrem.overgeared.platform.Menus;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -267,8 +268,8 @@ public class ModItemInteractEvents {
         }
         Optional<RecipeHolder<ForgingRecipe>> recipeOpt = anvilBE.getCurrentRecipeHolder();
 
-        if (serverPlayer.getServer() != null && serverPlayer.getServer().getGameRules().get(GameRules.LIMITED_CRAFTING)) {
-            if (!serverPlayer.getRecipeBook().contains(recipeOpt.get())) {
+        if (level.getGameRules().get(GameRules.LIMITED_CRAFTING)) {
+            if (recipeOpt.isEmpty() || !serverPlayer.getRecipeBook().contains(recipeOpt.get().id())) {
                 serverPlayer.sendSystemMessage(
                         Component.translatable("message.overgeared.no_recipe")
                                 .withStyle(ChatFormatting.RED),
@@ -287,7 +288,7 @@ public class ModItemInteractEvents {
 
             // Sync ownership
             CompoundTag sync = new CompoundTag();
-            sync.putUUID("anvilOwner", playerUUID);
+            sync.store("anvilOwner", UUIDUtil.CODEC, playerUUID);
             sync.putLong("anvilPos", pos.asLong());
             PacketDistributor.sendToAllPlayers(new MinigameSyncS2CPacket(sync));
 
@@ -501,7 +502,7 @@ public class ModItemInteractEvents {
                     0.8F, 1.0F);
         } else {
             level.playSound(null, pos,
-                    SoundEvents.STONE_HIT.value(), SoundSource.BLOCKS,
+                    SoundEvents.STONE_HIT, SoundSource.BLOCKS,
                     1.0F, 1.0F);
         }
 
@@ -513,8 +514,8 @@ public class ModItemInteractEvents {
     public static void handleAnvilOwnershipSync(CompoundTag syncData) {
         UUID owner = null;
         if (syncData.contains("anvilOwner")) {
-            owner = syncData.getUUID("anvilOwner");
-            if (owner.getMostSignificantBits() == 0 && owner.getLeastSignificantBits() == 0) {
+            owner = syncData.read("anvilOwner", UUIDUtil.CODEC).orElse(null);
+            if (owner != null && owner.getMostSignificantBits() == 0 && owner.getLeastSignificantBits() == 0) {
                 owner = null;
             }
         }
@@ -560,7 +561,7 @@ public class ModItemInteractEvents {
             // 3. Sync null ownership to all clients (they clear their occupied-anvil entry on receipt)
             CompoundTag syncData = new CompoundTag();
             syncData.putLong("anvilPos", pos.asLong());
-            syncData.putUUID("anvilOwner", new UUID(0, 0)); // special "no owner" UUID
+            syncData.store("anvilOwner", UUIDUtil.CODEC, new UUID(0, 0)); // special "no owner" UUID
             PacketDistributor.sendToAllPlayers(new MinigameSyncS2CPacket(syncData));
         }
     }
