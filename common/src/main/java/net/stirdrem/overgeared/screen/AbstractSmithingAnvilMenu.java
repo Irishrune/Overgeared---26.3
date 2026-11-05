@@ -459,29 +459,7 @@ public class AbstractSmithingAnvilMenu extends RecipeBookMenu {
     }
 
     public ItemStack getGhostResult() {
-        // On client side, check if Polymorph has a selected output
-        if (level.isClientSide()) {
-            try {
-                if (Polymorph.LOADED) {
-                    Optional<ItemStack> polymorphOutput =
-                            Polymorph.getSelectedOutput();
-                    if (polymorphOutput.isPresent()) {
-                        return polymorphOutput.get();
-                    } else {
-                        Optional<ForgingRecipe> recipeOptional = blockEntity.getCurrentRecipe();
-                        if (recipeOptional.isPresent()) {
-                            ForgingRecipe recipe = recipeOptional.get();
-                            if (blockEntity.hasRecipe()) {
-                                return recipe.getResultItem(level.registryAccess()).copy();
-                            }
-                        }
-                        return ItemStack.EMPTY;
-                    }
-                }
-            } catch (Exception e) {
-                // Polymorph not available - fall through to default behavior
-            }
-        }
+        if (level.isClientSide()) return blockEntity.getRecipePreview();
 
         // Default behavior: return the expected result based on current inputs
         // Avoid using cached recipe (getCurrentRecipe())
@@ -542,10 +520,8 @@ public class AbstractSmithingAnvilMenu extends RecipeBookMenu {
 
     /**
      * Fabric 26.3 calls the recipe-book placement hook with a ServerLevel and
-     * a drop-permission flag.  Forging recipes deliberately use
-     * PlacementInfo.NOT_PLACEABLE (their optional blueprint and patterned metal
-     * parts do not fit vanilla's crafting placement algorithm), so retain a
-     * custom, inventory-conserving transfer here instead.
+     * a drop-permission flag. Forging recipes publish placement ingredients to
+     * the book, but use this custom transfer for the separate blueprint slot.
      *
      * The existing hands-on hammering/minigame is still required after placement.
      * Never overwrite an occupied grid slot, and preflight every ingredient

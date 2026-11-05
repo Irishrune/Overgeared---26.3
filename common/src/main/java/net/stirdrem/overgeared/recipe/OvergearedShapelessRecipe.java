@@ -58,6 +58,14 @@ public class OvergearedShapelessRecipe extends NormalCraftingRecipe {
     }
 
     @Override
+    public java.util.List<net.minecraft.world.item.crafting.display.RecipeDisplay> display() {
+        return java.util.List.of(new net.minecraft.world.item.crafting.display.ShapelessCraftingRecipeDisplay(
+                baseIngredients.stream().map(Ingredient::display).toList(),
+                new net.minecraft.world.item.crafting.display.SlotDisplay.ItemStackSlotDisplay(result),
+                new net.minecraft.world.item.crafting.display.SlotDisplay.ItemSlotDisplay(net.minecraft.world.item.Items.CRAFTING_TABLE)));
+    }
+
+    @Override
     public NonNullList<ItemStack> getRemainingItems(CraftingInput input) {
         NonNullList<ItemStack> remainingItems = NonNullList.withSize(input.size(), ItemStack.EMPTY);
 

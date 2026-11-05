@@ -70,6 +70,7 @@ public class PortGameTests {
         head.set(ModComponents.POLISHED.get(), true);
         CraftingInput assembly = CraftingInput.of(2, 1, List.of(new ItemStack(Items.STICK), head));
         var assemble = (OvergearedShapelessRecipe)recipe(test, "minecraft:iron_pickaxe");
+        check(assemble.display().size() == 1, "Tool assembly missing from vanilla recipe book");
         check(assemble.matches(assembly, test.getLevel()), "Head and handle cannot be assembled");
         ItemStack tool = assemble.assemble(assembly);
         check(tool.is(Items.IRON_PICKAXE), "Wrong assembled tool");

@@ -3,6 +3,9 @@ package net.stirdrem.overgeared.block.entity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
@@ -64,6 +67,24 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
     protected AbstractSmithingAnvil anvilBlock;
     protected static final int BLUEPRINT_SLOT = 11;
     protected boolean hasHeatedItems = false;
+    private ItemStack recipePreview = ItemStack.EMPTY;
+
+    public ItemStack getRecipePreview() {
+        return recipePreview.copy();
+    }
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = super.getUpdateTag(registries);
+        // Clients no longer have the server recipe database. Send a display-only
+        // preview alongside the inventory, never as a collectible container slot.
+        if (hasRecipe()) {
+            ItemStack preview = getCurrentRecipe().orElseThrow().assemble(new RecipeWrapper(itemHandler));
+            if (!preview.isEmpty()) tag.store("overgeared_preview", ItemStack.CODEC,
+                    registries.createSerializationContext(NbtOps.INSTANCE), preview);
+        }
+        return tag;
+    }
 
     // Define slot indices
     private static final int[] TOP_SLOTS = new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8}; // input grid
@@ -170,6 +191,7 @@ public abstract class AbstractSmithingAnvilBlockEntity extends BaseSmithingAnvil
     @Override
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
+        recipePreview = input.read("overgeared_preview", ItemStack.CODEC).orElse(ItemStack.EMPTY);
         hitRemains = input.getIntOr("hitRemains", 0);
         progress = input.getIntOr("progress", 0);
         maxProgress = input.getIntOr("maxProgress", 0);

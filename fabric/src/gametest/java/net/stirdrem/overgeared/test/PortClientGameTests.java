@@ -11,6 +11,9 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.stirdrem.overgeared.block.ModBlocks;
+import net.stirdrem.overgeared.block.entity.AbstractSmithingAnvilBlockEntity;
+import net.stirdrem.overgeared.item.ModItems;
+import net.minecraft.world.item.ItemStack;
 import net.stirdrem.overgeared.screen.*;
 
 /** Exercises actual server-to-client menu opening and the 26.3 rendering pipeline. */
@@ -37,6 +40,10 @@ public class PortClientGameTests implements FabricClientGameTest {
                     var pos = player.blockPosition().offset(2, 0, 0);
                     level.setBlockAndUpdate(pos.below(), Blocks.STONE.defaultBlockState());
                     level.setBlockAndUpdate(pos, station.block().defaultBlockState());
+                    if (level.getBlockEntity(pos) instanceof AbstractSmithingAnvilBlockEntity anvil) {
+                        for (int i = 0; i < 3; i++) anvil.getItemHandler().setStackInSlot(i, new ItemStack(ModItems.HEATED_IRON_INGOT.get()));
+                        anvil.getItemHandler().setStackInSlot(9, new ItemStack(ModItems.COPPER_SMITHING_HAMMER.get()));
+                    }
                     level.getBlockState(pos).useWithoutItem(level, player,
                             new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false));
                 });
@@ -44,6 +51,8 @@ public class PortClientGameTests implements FabricClientGameTest {
                 context.waitTicks(5);
                 context.takeScreenshot(station.screenshot());
                 if (context.computeOnClient(client -> client.gui.screen() instanceof AbstractSmithingAnvilScreen<?>)) {
+                    context.waitFor(client -> client.player.containerMenu instanceof AbstractSmithingAnvilMenu menu
+                            && menu.getGhostResult().is(ModItems.IRON_PICKAXE_HEAD.get()));
                     context.runOnClient(client -> client.gui.screen().children().stream()
                             .filter(ImageButton.class::isInstance).map(ImageButton.class::cast)
                             .findFirst().orElseThrow().onPress(new KeyEvent(40, 40, 0)));
